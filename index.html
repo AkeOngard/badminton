@@ -1,0 +1,1269 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สุ่มคู่ลงสนาม</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
+
+<style>
+  :root {
+    --bg: #EDF1EB;
+    --bg-grad: #E3E9E0;
+    --surface: #FFFFFF;
+    --surface-2: #E6EBE3;
+    --ink: #14201C;
+    --ink-2: #4D5B55;
+    --ink-3: #78857F;
+    --line: #CED8CE;
+    --line-soft: #DEE5DC;
+    --court: #13544A;
+    --court-deep: #0E443C;
+    --court-ink: #F4F9F3;
+    --accent: #13544A;
+    --accent-ink: #F4F9F3;
+    --rest: #93681B;
+    --rest-soft: #F2E7CE;
+
+    --font-display: 'Chakra Petch', 'IBM Plex Sans Thai', system-ui, sans-serif;
+    --font-body: 'IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif;
+    --font-mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+
+    --r-sm: 4px;
+    --r-md: 8px;
+    --r-lg: 14px;
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0C1311;
+      --bg-grad: #101917;
+      --surface: #141E1B;
+      --surface-2: #1B2723;
+      --ink: #E7EEE8;
+      --ink-2: #9BABA4;
+      --ink-3: #76867F;
+      --line: #26332E;
+      --line-soft: #1F2C28;
+      --court: #10463D;
+      --court-deep: #0B352E;
+      --court-ink: #EFF6EE;
+      --accent: #3E9C87;
+      --accent-ink: #07201B;
+      --rest: #D7A549;
+      --rest-soft: #2C2516;
+      color-scheme: dark;
+    }
+  }
+
+  :root[data-theme="dark"] {
+    --bg: #0C1311;
+    --bg-grad: #101917;
+    --surface: #141E1B;
+    --surface-2: #1B2723;
+    --ink: #E7EEE8;
+    --ink-2: #9BABA4;
+    --ink-3: #76867F;
+    --line: #26332E;
+    --line-soft: #1F2C28;
+    --court: #10463D;
+    --court-deep: #0B352E;
+    --court-ink: #EFF6EE;
+    --accent: #3E9C87;
+    --accent-ink: #07201B;
+    --rest: #D7A549;
+    --rest-soft: #2C2516;
+    color-scheme: dark;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image: linear-gradient(180deg, var(--bg) 0%, var(--bg-grad) 100%);
+    background-attachment: fixed;
+    color: var(--ink);
+    font-family: var(--font-body);
+    font-size: 15px;
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .app {
+    max-width: 1140px;
+    margin: 0 auto;
+    padding: 28px 20px 64px;
+  }
+
+  /* ---------- masthead ---------- */
+  .masthead {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    padding-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 26px;
+  }
+  .mark { flex: none; width: 46px; height: 46px; margin-top: 4px; }
+  .eyebrow {
+    margin: 0 0 2px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-weight: 700;
+    font-size: clamp(28px, 4.4vw, 40px);
+    line-height: 1.1;
+    letter-spacing: -0.01em;
+    text-wrap: balance;
+  }
+  .lede {
+    margin: 8px 0 0;
+    max-width: 54ch;
+    color: var(--ink-2);
+  }
+
+  /* ---------- layout ---------- */
+  .layout {
+    display: grid;
+    grid-template-columns: minmax(268px, 330px) minmax(0, 1fr);
+    gap: 26px;
+    align-items: start;
+  }
+  @media (max-width: 880px) {
+    .layout { grid-template-columns: minmax(0, 1fr); }
+  }
+
+  /* ---------- control panel ---------- */
+  .panel {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    padding: 20px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    position: sticky;
+    top: 20px;
+  }
+  @media (max-width: 880px) {
+    .panel { position: static; }
+  }
+  .field { display: flex; flex-direction: column; gap: 9px; }
+  .field__label {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 10px;
+  }
+  .label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--ink-3);
+  }
+  .count {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+  textarea {
+    font-family: var(--font-body);
+    font-size: 14.5px;
+    line-height: 1.7;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 11px 12px;
+    min-height: 188px;
+    resize: vertical;
+    width: 100%;
+  }
+  textarea::placeholder { color: var(--ink-3); }
+  textarea:focus-visible, button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .hint { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+
+  .segment {
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 4px;
+    padding: 4px;
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+  }
+  .segment button {
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--ink-2);
+    background: transparent;
+    border: 0;
+    border-radius: var(--r-sm);
+    padding: 8px 6px;
+    cursor: pointer;
+    transition: background .15s ease, color .15s ease;
+  }
+  .segment button .mono { font-size: 12px; }
+  .segment button:hover { color: var(--ink); }
+  .segment button[aria-pressed="true"] {
+    background: var(--accent);
+    color: var(--accent-ink);
+    font-weight: 600;
+  }
+
+  .actions { display: flex; flex-direction: column; gap: 9px; }
+  .btn {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    letter-spacing: .01em;
+    padding: 12px 16px;
+    border-radius: var(--r-md);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: transform .12s ease, background .15s ease, border-color .15s ease;
+  }
+  .btn:active { transform: translateY(1px); }
+  .btn--primary { background: var(--accent); color: var(--accent-ink); }
+  .btn--primary:hover { filter: brightness(1.08); }
+  .btn--ghost {
+    background: transparent;
+    color: var(--ink-2);
+    border-color: var(--line);
+    font-size: 14px;
+  }
+  .btn--ghost:hover { color: var(--ink); border-color: var(--ink-3); }
+
+  .stat-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .stat-list li {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto auto;
+    gap: 10px;
+    align-items: baseline;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 14px;
+  }
+  .stat-list li:last-child { border-bottom: 0; }
+  .stat-list .nm { overflow-wrap: anywhere; }
+  .stat-list .v {
+    font-family: var(--font-mono);
+    font-size: 12.5px;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink-2);
+  }
+  .stat-list .v--rest { color: var(--rest); }
+
+  /* ---------- board ---------- */
+  .board { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
+  .summary {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 10px;
+    align-items: center;
+  }
+  .pill {
+    display: inline-flex;
+    gap: 7px;
+    align-items: baseline;
+    padding: 5px 11px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    font-size: 13px;
+    color: var(--ink-2);
+  }
+  .pill b {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+  }
+  .status {
+    margin: 0;
+    font-size: 13.5px;
+    color: var(--ink-2);
+    min-height: 1.4em;
+  }
+  .status[data-kind="warn"] { color: var(--rest); }
+
+  .round { display: flex; flex-direction: column; gap: 11px; }
+  .round__head {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 7px;
+    border-bottom: 1px solid var(--line);
+  }
+  .round__no {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 600;
+    margin: 0;
+  }
+  .round__meta {
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--ink-3);
+    margin-right: auto;
+  }
+  .mini-btn {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    color: var(--ink-2);
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 100px;
+    padding: 4px 11px;
+    cursor: pointer;
+  }
+  .mini-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+  .mini-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  .courts {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(286px, 1fr));
+    gap: 14px;
+  }
+
+  /* ---------- the court ---------- */
+  .court {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    max-width: 520px;
+  }
+  .court__head {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+  }
+  .court__no {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .court__fmt {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .08em;
+    color: var(--ink-3);
+    margin-left: auto;
+  }
+  .plan {
+    position: relative;
+    aspect-ratio: 2.2 / 1;
+    min-height: 132px;
+    background: var(--court);
+    background-image: linear-gradient(105deg, rgba(255,255,255,.05), rgba(0,0,0,.12));
+    border-radius: var(--r-sm);
+    padding: 9px;
+    display: grid;
+    grid-template-columns: 1fr 3px 1fr;
+    overflow: hidden;
+  }
+  /* boundary + long service lines, drawn with the court's own chalk */
+  .plan::before {
+    content: "";
+    position: absolute;
+    inset: 9px;
+    border: 1.5px solid rgba(244,249,243,.72);
+    border-radius: 2px;
+    pointer-events: none;
+  }
+  .plan::after {
+    content: "";
+    position: absolute;
+    inset: 9px;
+    border-top: 1px solid rgba(244,249,243,.26);
+    border-bottom: 1px solid rgba(244,249,243,.26);
+    border-left: 0;
+    border-right: 0;
+    margin: 13px 0;
+    pointer-events: none;
+  }
+  /* singles sidelines sit inside the doubles box — brighten whichever is in play */
+  .plan[data-fmt="singles"]::after {
+    border-top-color: rgba(244,249,243,.72);
+    border-bottom-color: rgba(244,249,243,.72);
+  }
+  .plan[data-fmt="singles"]::before { border-color: rgba(244,249,243,.3); }
+
+  .net {
+    position: relative;
+    background-image:
+      linear-gradient(rgba(244,249,243,.9), rgba(244,249,243,.9)),
+      repeating-linear-gradient(0deg, rgba(244,249,243,.55) 0 2px, transparent 2px 5px);
+    background-size: 100% 3px, 100% 100%;
+    background-position: top center, center;
+    background-repeat: no-repeat, repeat-y;
+  }
+  .side {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 10px;
+    min-width: 0;
+  }
+  .name {
+    display: block;
+    max-width: 100%;
+    padding: 5px 11px;
+    background: rgba(10, 38, 33, .52);
+    border: 1px solid rgba(244,249,243,.42);
+    border-radius: 100px;
+    color: var(--court-ink);
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.35;
+    text-align: center;
+    overflow-wrap: anywhere;
+  }
+  .side__tag {
+    position: absolute;
+    top: 2px;
+    font-family: var(--font-mono);
+    font-size: 10px;
+    letter-spacing: .1em;
+    color: rgba(244,249,243,.5);
+  }
+
+  /* ---------- resting ---------- */
+  .rest {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 14px;
+    background: var(--rest-soft);
+    border: 1px dashed var(--rest);
+    border-radius: var(--r-md);
+  }
+  .rest__label {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--rest);
+    margin-right: 2px;
+  }
+  .rest .name {
+    background: transparent;
+    border-color: var(--rest);
+    color: var(--ink);
+  }
+
+  .waiting {
+    margin: 4px 0 0;
+    font-size: 12.5px;
+    line-height: 1.6;
+    color: var(--ink-3);
+    overflow-wrap: anywhere;
+  }
+  .waiting b {
+    font-family: var(--font-mono);
+    font-weight: 500;
+    font-size: 10.5px;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-right: 6px;
+  }
+
+  .empty {
+    padding: 28px;
+    text-align: center;
+    color: var(--ink-2);
+    background: var(--surface);
+    border: 1px dashed var(--line);
+    border-radius: var(--r-lg);
+  }
+
+  .footnote {
+    margin: 6px 0 0;
+    font-size: 12px;
+    color: var(--ink-3);
+    font-variant-numeric: tabular-nums;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+
+<div class="app">
+  <header class="masthead">
+    <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+      <g fill="none" stroke="var(--ink-2)" stroke-width="1.4" stroke-linecap="round">
+        <path d="M33 15 L10 38" />
+        <path d="M38 10 C42 14 42 18 38 22 L26 10 C30 6 34 6 38 10 Z" fill="var(--court)" stroke="var(--court)" />
+        <path d="M31 17 L17 31" />
+        <path d="M27 13 L13 27" />
+        <path d="M6 42 C6 36 10 32 16 32 L16 42 Z" fill="none" stroke="var(--ink-3)" />
+      </g>
+    </svg>
+    <div>
+      <p class="eyebrow">ก๊วนแบดมินตัน · ตัวช่วยจัดคิวสนาม</p>
+      <h1>สุ่มคู่ลงสนาม</h1>
+      <p class="lede">กรอกรายชื่อคนที่มาวันนี้ เลือกเดี่ยวหรือคู่ แล้วเลือกจำนวนสนาม จะสุ่มเร็ว ๆ หรือจัดตารางให้ทุกคนได้วนจับคู่กันครบทุกคนก็ได้ — ทุกรอบชื่อไม่ซ้ำกัน</p>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="panel">
+      <div class="field">
+        <div class="field__label">
+          <span class="label">รายชื่อผู้เล่น</span>
+          <span class="count" id="nameCount">0 คน</span>
+        </div>
+        <textarea id="names" spellcheck="false" placeholder="พิมพ์ชื่อ บรรทัดละ 1 คน&#10;หรือคั่นด้วยลูกน้ำก็ได้"></textarea>
+        <p class="hint" id="nameHint">บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ</p>
+      </div>
+
+      <div class="field">
+        <span class="label">รูปแบบการแข่ง</span>
+        <div class="segment" id="modeSeg" role="group" aria-label="รูปแบบการแข่ง">
+          <button type="button" data-mode="singles" aria-pressed="false">เดี่ยว <span class="mono">1:1</span></button>
+          <button type="button" data-mode="doubles" aria-pressed="true">คู่ <span class="mono">2:2</span></button>
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="label">วิธีจัดตาราง</span>
+        <div class="segment" id="planSeg" role="group" aria-label="วิธีจัดตาราง">
+          <button type="button" data-plan="random" aria-pressed="true">สุ่มล้วน</button>
+          <button type="button" data-plan="rotate" aria-pressed="false">วนครบทุกคู่</button>
+        </div>
+        <p class="hint" id="planHint"></p>
+      </div>
+
+      <div class="field">
+        <span class="label">จำนวนสนาม</span>
+        <div class="segment" id="courtSeg" role="group" aria-label="จำนวนสนาม">
+          <button type="button" data-courts="1" aria-pressed="false"><span class="mono">1</span></button>
+          <button type="button" data-courts="2" aria-pressed="true"><span class="mono">2</span></button>
+          <button type="button" data-courts="3" aria-pressed="false"><span class="mono">3</span></button>
+          <button type="button" data-courts="4" aria-pressed="false"><span class="mono">4</span></button>
+        </div>
+      </div>
+
+      <div class="actions">
+        <button type="button" class="btn btn--primary" id="shuffle">สุ่มจับคู่</button>
+        <button type="button" class="btn btn--ghost" id="reset">รีเซ็ตการจับคู่และสถิติ</button>
+      </div>
+
+      <div class="field">
+        <div class="field__label">
+          <span class="label">สถิติวันนี้</span>
+          <span class="count">ลง / พัก</span>
+        </div>
+        <ul class="stat-list" id="stats"></ul>
+      </div>
+    </aside>
+
+    <section class="board">
+      <div class="summary" id="summary"></div>
+      <p class="status" id="status" role="status"></p>
+      <div id="rounds"></div>
+      <p class="footnote">ผังสนามวาดตามสัดส่วนมาตรฐาน BWF 13.40 × 6.10 ม. · เส้นในคือขอบสนามเดี่ยว (กว้าง 5.18 ม.)</p>
+    </section>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var SAMPLE = ['ต้น', 'เบล', 'ฟ้า', 'กุ้ง', 'โอ๊ต', 'มิ้นท์', 'ปอนด์', 'เจ'];
+  var STORE_KEY = 'badminton-draw-v1';
+
+  var state = {
+    mode: 'doubles',
+    plan: 'random',
+    courts: 2,
+    players: [],
+    rounds: [],
+    waiting: [],
+    resting: [],
+    coverage: null,
+    played: {},
+    rested: {},
+    pairs: {}
+  };
+
+  var el = {
+    names: document.getElementById('names'),
+    nameCount: document.getElementById('nameCount'),
+    nameHint: document.getElementById('nameHint'),
+    modeSeg: document.getElementById('modeSeg'),
+    planSeg: document.getElementById('planSeg'),
+    planHint: document.getElementById('planHint'),
+    courtSeg: document.getElementById('courtSeg'),
+    shuffle: document.getElementById('shuffle'),
+    reset: document.getElementById('reset'),
+    stats: document.getElementById('stats'),
+    summary: document.getElementById('summary'),
+    status: document.getElementById('status'),
+    rounds: document.getElementById('rounds')
+  };
+
+  /* ---------- helpers ---------- */
+
+  function perCourt() { return state.mode === 'singles' ? 2 : 4; }
+  function fmtLabel() { return state.mode === 'singles' ? 'เดี่ยว 1:1' : 'คู่ 2:2'; }
+  function drawLabel() { return state.plan === 'rotate' ? 'สร้างตารางหมุนเวียน' : 'สุ่มจับคู่'; }
+
+  function clearDraw() {
+    state.rounds = [];
+    state.waiting = [];
+    state.resting = [];
+    state.coverage = null;
+  }
+
+  function parseNames(raw) {
+    var seen = Object.create(null);
+    var out = [];
+    var dupes = 0;
+    raw.split(/[\n,|、]/).forEach(function (part) {
+      var name = part.replace(/\s+/g, ' ').trim();
+      if (!name) return;
+      var key = name.toLowerCase();
+      if (seen[key]) { dupes++; return; }
+      seen[key] = true;
+      out.push(name);
+    });
+    return { names: out, dupes: dupes };
+  }
+
+  function shuffled(list) {
+    var a = list.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  // Fewest games first, random order inside each tier (Array.sort is stable).
+  function queueOrder(players) {
+    return shuffled(players).sort(function (a, b) {
+      return (state.played[a] || 0) - (state.played[b] || 0);
+    });
+  }
+
+  function pairKey(a, b) { return a < b ? a + ' ' + b : b + ' ' + a; }
+
+  // Of the three ways to split 4 players, take the one with the least shared history.
+  function splitFour(four) {
+    var options = [
+      [[four[0], four[1]], [four[2], four[3]]],
+      [[four[0], four[2]], [four[1], four[3]]],
+      [[four[0], four[3]], [four[1], four[2]]]
+    ];
+    var best = null, bestScore = Infinity;
+    shuffled(options).forEach(function (opt) {
+      var score = (state.pairs[pairKey(opt[0][0], opt[0][1])] || 0) +
+                  (state.pairs[pairKey(opt[1][0], opt[1][1])] || 0);
+      if (score < bestScore) { bestScore = score; best = opt; }
+    });
+    return best;
+  }
+
+  function makeMatch(group) {
+    if (group.length === 2) return [[group[0]], [group[1]]];
+    return splitFour(group);
+  }
+
+  function recordMatch(match) {
+    match.forEach(function (side) {
+      side.forEach(function (name) {
+        state.played[name] = (state.played[name] || 0) + 1;
+      });
+      if (side.length === 2) {
+        var k = pairKey(side[0], side[1]);
+        state.pairs[k] = (state.pairs[k] || 0) + 1;
+      }
+    });
+  }
+
+  /* ---------- schedules ---------- */
+
+  // One pass of the draw: everyone plays once, the remainder sits this set out.
+  function randomGames(players, per) {
+    var queue = queueOrder(players);
+    var matchCount = Math.floor(queue.length / per);
+    var games = [];
+    for (var i = 0; i < matchCount * per; i += per) {
+      games.push(makeMatch(queue.slice(i, i + per)));
+    }
+    return games;
+  }
+
+  // Circle method: n-1 rounds of disjoint pairs covering every pair exactly once.
+  function circleRounds(list) {
+    var arr = list.slice();
+    if (arr.length % 2) arr.push(null); // ghost player for an odd head count
+    var n = arr.length;
+    var rounds = [];
+    for (var r = 0; r < n - 1; r++) {
+      var pairs = [];
+      for (var i = 0; i < n / 2; i++) {
+        var a = arr[i], b = arr[n - 1 - i];
+        if (a !== null && b !== null) pairs.push([a, b]);
+      }
+      rounds.push(pairs);
+      arr = [arr[0], arr[n - 1]].concat(arr.slice(1, n - 1));
+    }
+    return rounds;
+  }
+
+  function allPairs(players) {
+    var out = [];
+    for (var i = 0; i < players.length; i++) {
+      for (var j = i + 1; j < players.length; j++) out.push([players[i], players[j]]);
+    }
+    return out;
+  }
+
+  // Two partnerships nobody has played yet, using four different people.
+  function findGame(avail, unused) {
+    for (var i = 0; i < avail.length; i++) {
+      for (var j = i + 1; j < avail.length; j++) {
+        if (!unused[pairKey(avail[i], avail[j])]) continue;
+        for (var k = 0; k < avail.length; k++) {
+          if (k === i || k === j) continue;
+          for (var l = k + 1; l < avail.length; l++) {
+            if (l === i || l === j) continue;
+            if (!unused[pairKey(avail[k], avail[l])]) continue;
+            return [[avail[i], avail[j]], [avail[k], avail[l]]];
+          }
+        }
+      }
+    }
+    return null;
+  }
+
+  // Doubles rotation: fill one whole round at a time. Whoever has played least
+  // goes on first and every game uses a partnership nobody has had yet, so the
+  // schedule covers all partnerships while keeping courts busy.
+  function doublesRotation(players) {
+    var unused = Object.create(null);
+    var remaining = 0;
+    allPairs(players).forEach(function (p) {
+      unused[pairKey(p[0], p[1])] = true;
+      remaining++;
+    });
+
+    var plays = Object.create(null);
+    players.forEach(function (p) { plays[p] = 0; });
+
+    var games = [];
+    while (remaining >= 2) {
+      var avail = shuffled(players).sort(function (a, b) { return plays[a] - plays[b]; });
+      var made = 0;
+
+      while (avail.length >= 4) {
+        var game = findGame(avail, unused);
+        if (!game) break;
+        games.push(game);
+        made++;
+        remaining -= 2;
+        delete unused[pairKey(game[0][0], game[0][1])];
+        delete unused[pairKey(game[1][0], game[1][1])];
+        game[0].concat(game[1]).forEach(function (p) {
+          plays[p]++;
+          avail.splice(avail.indexOf(p), 1);
+        });
+      }
+
+      if (!made) break; // nothing left that can make a fresh partnership
+    }
+    return games;
+  }
+
+  // Full rotation: every player partners (singles: meets) every other player once.
+  function rotationGames(players, per) {
+    if (per === 4) return doublesRotation(players);
+
+    var games = [];
+    circleRounds(shuffled(players)).forEach(function (pairs) {
+      shuffled(pairs).forEach(function (p) { games.push([[p[0]], [p[1]]]); });
+    });
+    return games;
+  }
+
+  // Fill each round with games that share no player, keeping schedule order.
+  // Several starting games are tried so the courts sit idle as little as possible.
+  function chunkRounds(games, courts) {
+    var pending = games.slice();
+    var out = [];
+
+    while (pending.length) {
+      var best = null;
+      var anchors = Math.min(pending.length, 24);
+
+      for (var s = 0; s < anchors; s++) {
+        var picked = [s];
+        var used = Object.create(null);
+        pending[s][0].concat(pending[s][1]).forEach(function (n) { used[n] = true; });
+
+        for (var k = 0; k < pending.length && picked.length < courts; k++) {
+          if (k === s) continue;
+          var people = pending[k][0].concat(pending[k][1]);
+          if (people.some(function (n) { return used[n]; })) continue;
+          people.forEach(function (n) { used[n] = true; });
+          picked.push(k);
+        }
+
+        if (!best || picked.length > best.length) best = picked;
+        if (best.length === courts) break;
+      }
+
+      out.push(best.map(function (i) { return pending[i]; }));
+      best.slice().sort(function (a, b) { return b - a; })
+        .forEach(function (i) { pending.splice(i, 1); });
+    }
+    return out;
+  }
+
+  function coverageOf(games, players, per) {
+    var seen = Object.create(null);
+    var done = 0;
+    games.forEach(function (g) {
+      var duos = per === 2 ? [[g[0][0], g[1][0]]] : [g[0], g[1]];
+      duos.forEach(function (d) {
+        var k = pairKey(d[0], d[1]);
+        if (!seen[k]) { seen[k] = 1; done++; }
+      });
+    });
+    var n = players.length;
+    return { done: done, total: n * (n - 1) / 2 };
+  }
+
+  /* ---------- the draw ---------- */
+
+  function draw() {
+    var per = perCourt();
+    var players = state.players;
+
+    state.rounds = [];
+    state.waiting = [];
+    state.resting = [];
+    state.coverage = null;
+
+    if (players.length < per) {
+      render();
+      setStatus('ต้องมีผู้เล่นอย่างน้อย ' + per + ' คนสำหรับการแข่ง' + fmtLabel() + ' (ตอนนี้ ' + players.length + ' คน)', 'warn');
+      return;
+    }
+
+    var rotating = state.plan === 'rotate';
+    var games = rotating ? rotationGames(players, per) : randomGames(players, per);
+    games.forEach(recordMatch);
+
+    state.rounds = chunkRounds(games, state.courts);
+    state.coverage = coverageOf(games, players, per);
+
+    var everPlayed = Object.create(null);
+    games.forEach(function (g) {
+      g[0].concat(g[1]).forEach(function (n) { everPlayed[n] = true; });
+    });
+    state.resting = players.filter(function (n) { return !everPlayed[n]; });
+    state.resting.forEach(function (name) {
+      state.rested[name] = (state.rested[name] || 0) + 1;
+    });
+
+    state.waiting = state.rounds.map(function (round) {
+      var onCourt = Object.create(null);
+      round.forEach(function (g) {
+        g[0].concat(g[1]).forEach(function (n) { onCourt[n] = true; });
+      });
+      return players.filter(function (n) { return everPlayed[n] && !onCourt[n]; });
+    });
+
+    render();
+
+    var msg;
+    if (rotating) {
+      msg = 'ตารางหมุนเวียน ' + games.length + ' แมตช์ ใน ' + state.rounds.length + ' รอบ — ' +
+        (per === 2 ? 'ทุกคนได้เจอกันครบ ' : 'ทุกคนได้จับคู่กับทุกคนครบ ') +
+        state.coverage.done + '/' + state.coverage.total + ' คู่';
+    } else {
+      msg = 'สุ่มแล้ว ' + games.length + ' แมตช์ ใน ' + state.rounds.length + ' รอบ — แต่ละรอบชื่อไม่ซ้ำกัน';
+      if (state.resting.length) {
+        msg += ' · ' + state.resting.length + ' คนพักชุดนี้ และจะได้ลงก่อนในการสุ่มครั้งถัดไป';
+      }
+    }
+    setStatus(msg, 'ok');
+  }
+
+  // Re-draw one round only, keeping the same people on court.
+  function redrawRound(index) {
+    var round = state.rounds[index];
+    if (!round) return;
+    var people = [];
+    round.forEach(function (match) {
+      match.forEach(function (side) { people = people.concat(side); });
+    });
+    var per = perCourt();
+    var mixed = shuffled(people);
+    var fresh = [];
+    for (var i = 0; i < mixed.length; i += per) {
+      fresh.push(makeMatch(mixed.slice(i, i + per)));
+    }
+    state.rounds[index] = fresh;
+    render();
+    setStatus('สุ่มรอบที่ ' + (index + 1) + ' ใหม่แล้ว — คนเดิม สลับสนามและคู่ใหม่', 'ok');
+  }
+
+  function resetAll() {
+    state.rounds = [];
+    state.waiting = [];
+    state.resting = [];
+    state.coverage = null;
+    state.played = {};
+    state.rested = {};
+    state.pairs = {};
+    render();
+    setStatus('ล้างผลและสถิติแล้ว กด “' + drawLabel() + '” เพื่อเริ่มใหม่', 'ok');
+  }
+
+  /* ---------- render ---------- */
+
+  function setStatus(text, kind) {
+    el.status.textContent = text;
+    el.status.setAttribute('data-kind', kind || 'ok');
+  }
+
+  function pill(label, value) {
+    var p = document.createElement('span');
+    p.className = 'pill';
+    p.appendChild(document.createTextNode(label + ' '));
+    var b = document.createElement('b');
+    b.textContent = value;
+    p.appendChild(b);
+    return p;
+  }
+
+  function nameChip(text) {
+    var s = document.createElement('span');
+    s.className = 'name';
+    s.textContent = text;
+    return s;
+  }
+
+  function courtCard(match, courtNo) {
+    var card = document.createElement('article');
+    card.className = 'court';
+
+    var head = document.createElement('header');
+    head.className = 'court__head';
+    var no = document.createElement('span');
+    no.className = 'court__no';
+    no.textContent = 'สนาม ' + courtNo;
+    var fmt = document.createElement('span');
+    fmt.className = 'court__fmt';
+    fmt.textContent = fmtLabel();
+    head.appendChild(no);
+    head.appendChild(fmt);
+
+    var plan = document.createElement('div');
+    plan.className = 'plan';
+    plan.setAttribute('data-fmt', state.mode);
+
+    var tags = ['ฝั่ง A', 'ฝั่ง B'];
+    match.forEach(function (side, idx) {
+      if (idx === 1) {
+        var net = document.createElement('div');
+        net.className = 'net';
+        net.setAttribute('aria-hidden', 'true');
+        plan.appendChild(net);
+      }
+      var box = document.createElement('div');
+      box.className = 'side';
+      var tag = document.createElement('span');
+      tag.className = 'side__tag';
+      tag.textContent = tags[idx];
+      box.appendChild(tag);
+      side.forEach(function (name) { box.appendChild(nameChip(name)); });
+      plan.appendChild(box);
+    });
+
+    card.appendChild(head);
+    card.appendChild(plan);
+    return card;
+  }
+
+  function renderRounds() {
+    el.rounds.textContent = '';
+
+    if (!state.rounds.length) {
+      var empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = state.players.length
+        ? 'ยังไม่มีผลการจับคู่ — กด “' + drawLabel() + '” ที่แผงด้านซ้าย'
+        : 'กรอกรายชื่อผู้เล่นก่อน แล้วกด “' + drawLabel() + '”';
+      el.rounds.appendChild(empty);
+      return;
+    }
+
+    var wrap = document.createElement('div');
+    wrap.style.display = 'flex';
+    wrap.style.flexDirection = 'column';
+    wrap.style.gap = '26px';
+
+    state.rounds.forEach(function (round, idx) {
+      var sec = document.createElement('section');
+      sec.className = 'round';
+
+      var head = document.createElement('header');
+      head.className = 'round__head';
+      var h3 = document.createElement('h3');
+      h3.className = 'round__no';
+      h3.textContent = 'รอบที่ ' + (idx + 1);
+      var meta = document.createElement('span');
+      meta.className = 'round__meta';
+      var people = round.reduce(function (n, m) { return n + m[0].length + m[1].length; }, 0);
+      meta.textContent = round.length + ' สนาม · ' + people + ' คน';
+      head.appendChild(h3);
+      head.appendChild(meta);
+
+      // Reshuffling one round would break the rotation's guarantee, so it is
+      // offered only in random mode.
+      if (state.plan === 'random') {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'mini-btn';
+        btn.textContent = 'สุ่มรอบนี้ใหม่';
+        btn.addEventListener('click', function () { redrawRound(idx); });
+        head.appendChild(btn);
+      }
+
+      var courts = document.createElement('div');
+      courts.className = 'courts';
+      round.forEach(function (match, i) {
+        courts.appendChild(courtCard(match, i + 1));
+      });
+
+      sec.appendChild(head);
+      sec.appendChild(courts);
+
+      var waitingNames = state.waiting[idx] || [];
+      if (waitingNames.length) {
+        var wait = document.createElement('p');
+        wait.className = 'waiting';
+        var lab = document.createElement('b');
+        lab.textContent = 'รอคิว ' + waitingNames.length;
+        wait.appendChild(lab);
+        wait.appendChild(document.createTextNode(waitingNames.join(' · ')));
+        sec.appendChild(wait);
+      }
+
+      wrap.appendChild(sec);
+    });
+
+    if (state.resting.length) {
+      var rest = document.createElement('div');
+      rest.className = 'rest';
+      var lab = document.createElement('span');
+      lab.className = 'rest__label';
+      lab.textContent = 'พักชุดนี้ · ' + state.resting.length + ' คน';
+      rest.appendChild(lab);
+      state.resting.forEach(function (name) { rest.appendChild(nameChip(name)); });
+      wrap.appendChild(rest);
+    }
+
+    el.rounds.appendChild(wrap);
+  }
+
+  function renderSummary() {
+    el.summary.textContent = '';
+    var per = perCourt();
+    var matches = state.rounds.reduce(function (n, r) { return n + r.length; }, 0);
+    el.summary.appendChild(pill('ผู้เล่น', state.players.length + ' คน'));
+    el.summary.appendChild(pill('รูปแบบ', fmtLabel()));
+    el.summary.appendChild(pill('คน/สนาม', String(per)));
+    el.summary.appendChild(pill('สนาม', String(state.courts)));
+    el.summary.appendChild(pill('รอบ', String(state.rounds.length)));
+    el.summary.appendChild(pill('แมตช์', String(matches)));
+    if (state.coverage) {
+      el.summary.appendChild(pill(
+        per === 2 ? 'ได้เจอกันแล้ว' : 'ได้จับคู่กันแล้ว',
+        state.coverage.done + '/' + state.coverage.total + ' คู่'
+      ));
+    }
+  }
+
+  function renderStats() {
+    el.stats.textContent = '';
+    if (!state.players.length) {
+      var li = document.createElement('li');
+      li.className = 'nm';
+      li.textContent = 'ยังไม่มีรายชื่อ';
+      el.stats.appendChild(li);
+      return;
+    }
+    state.players.slice().sort(function (a, b) {
+      return (state.played[b] || 0) - (state.played[a] || 0) || a.localeCompare(b, 'th');
+    }).forEach(function (name) {
+      var li = document.createElement('li');
+      var nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = name;
+      var p = document.createElement('span');
+      p.className = 'v';
+      p.textContent = 'ลง ' + (state.played[name] || 0);
+      var r = document.createElement('span');
+      r.className = 'v v--rest';
+      r.textContent = 'พัก ' + (state.rested[name] || 0);
+      li.appendChild(nm);
+      li.appendChild(p);
+      li.appendChild(r);
+      el.stats.appendChild(li);
+    });
+  }
+
+  function render() {
+    renderSummary();
+    renderRounds();
+    renderStats();
+  }
+
+  /* ---------- input wiring ---------- */
+
+  function syncNames() {
+    var parsed = parseNames(el.names.value);
+    state.players = parsed.names;
+    el.nameCount.textContent = parsed.names.length + ' คน';
+    el.nameHint.textContent = parsed.dupes
+      ? 'ตัดชื่อซ้ำออก ' + parsed.dupes + ' ชื่อ'
+      : 'บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ';
+    save();
+  }
+
+  function planHintText() {
+    if (state.plan === 'random') {
+      return 'สุ่มใหม่ทุกครั้ง เร็วและง่าย แต่ไม่การันตีว่าจะได้ครบทุกคู่';
+    }
+    return state.mode === 'singles'
+      ? 'สร้างตารางพบกันหมด ทุกคนได้เจอกันครบคนละ 1 ครั้ง'
+      : 'สร้างตารางหมุนเวียน ทุกคนได้จับคู่กับทุกคนครบคนละ 1 ครั้ง';
+  }
+
+  function syncPlanHint() {
+    el.planHint.textContent = planHintText();
+  }
+
+  function save() {
+    try {
+      localStorage.setItem(STORE_KEY, JSON.stringify({
+        names: el.names.value, mode: state.mode, plan: state.plan, courts: state.courts
+      }));
+    } catch (e) { /* private window or blocked storage — nothing to do */ }
+  }
+
+  function load() {
+    try {
+      var raw = localStorage.getItem(STORE_KEY);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) { return null; }
+  }
+
+  function pressGroup(container, attr, value) {
+    Array.prototype.forEach.call(container.querySelectorAll('button'), function (b) {
+      b.setAttribute('aria-pressed', b.getAttribute(attr) === String(value) ? 'true' : 'false');
+    });
+  }
+
+  el.names.addEventListener('input', syncNames);
+
+  el.modeSeg.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-mode]');
+    if (!btn) return;
+    state.mode = btn.getAttribute('data-mode');
+    pressGroup(el.modeSeg, 'data-mode', state.mode);
+    clearDraw();
+    syncPlanHint();
+    save();
+    render();
+    setStatus('เปลี่ยนเป็น' + fmtLabel() + ' (' + perCourt() + ' คนต่อสนาม) — กด' + drawLabel() + 'อีกครั้ง', 'ok');
+  });
+
+  el.planSeg.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-plan]');
+    if (!btn) return;
+    state.plan = btn.getAttribute('data-plan');
+    pressGroup(el.planSeg, 'data-plan', state.plan);
+    clearDraw();
+    syncPlanHint();
+    save();
+    el.shuffle.textContent = drawLabel();
+    render();
+    setStatus(planHintText() + ' — กด' + drawLabel(), 'ok');
+  });
+
+  el.courtSeg.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-courts]');
+    if (!btn) return;
+    state.courts = parseInt(btn.getAttribute('data-courts'), 10);
+    pressGroup(el.courtSeg, 'data-courts', state.courts);
+    clearDraw();
+    save();
+    render();
+    setStatus('ตั้งเป็น ' + state.courts + ' สนาม — กด' + drawLabel() + 'อีกครั้ง', 'ok');
+  });
+
+  el.shuffle.addEventListener('click', draw);
+  el.reset.addEventListener('click', resetAll);
+
+  /* ---------- start in a working state ---------- */
+
+  var usingSample = false;
+  var saved = load();
+  if (saved && typeof saved.names === 'string' && saved.names.trim()) {
+    el.names.value = saved.names;
+    if (saved.mode === 'singles' || saved.mode === 'doubles') state.mode = saved.mode;
+    if (saved.plan === 'random' || saved.plan === 'rotate') state.plan = saved.plan;
+    if (saved.courts >= 1 && saved.courts <= 4) state.courts = saved.courts;
+  } else {
+    el.names.value = SAMPLE.join('\n');
+    usingSample = true;
+  }
+  pressGroup(el.modeSeg, 'data-mode', state.mode);
+  pressGroup(el.planSeg, 'data-plan', state.plan);
+  pressGroup(el.courtSeg, 'data-courts', state.courts);
+  el.shuffle.textContent = drawLabel();
+  syncPlanHint();
+  syncNames();
+  if (usingSample) {
+    el.nameHint.textContent = 'ตัวอย่าง 8 ชื่อ — ลบแล้วพิมพ์ชื่อก๊วนของคุณทับได้เลย';
+  }
+  draw();
+}());
+</script>
