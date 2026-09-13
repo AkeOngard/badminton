@@ -17,11 +17,15 @@
     --ink-3: #78857F;
     --line: #CED8CE;
     --line-soft: #DEE5DC;
-    --court: #13544A;
-    --court-deep: #0E443C;
+    --mat-1: #14554A;
+    --mat-2: #17486E;
+    --mat-3: #6B2B40;
+    --mat-4: #3B3B74;
     --court-ink: #F4F9F3;
     --accent: #13544A;
     --accent-ink: #F4F9F3;
+    --accent-soft: #DCE9E2;
+    --accent-line: #9EC3B6;
     --rest: #93681B;
     --rest-soft: #F2E7CE;
 
@@ -46,11 +50,15 @@
       --ink-3: #76867F;
       --line: #26332E;
       --line-soft: #1F2C28;
-      --court: #10463D;
-      --court-deep: #0B352E;
+      --mat-1: #11473E;
+      --mat-2: #133D5D;
+      --mat-3: #5A2134;
+      --mat-4: #2F3060;
       --court-ink: #EFF6EE;
       --accent: #3E9C87;
       --accent-ink: #07201B;
+      --accent-soft: #16332C;
+      --accent-line: #2F6355;
       --rest: #D7A549;
       --rest-soft: #2C2516;
       color-scheme: dark;
@@ -67,11 +75,15 @@
     --ink-3: #76867F;
     --line: #26332E;
     --line-soft: #1F2C28;
-    --court: #10463D;
-    --court-deep: #0B352E;
+    --mat-1: #11473E;
+    --mat-2: #133D5D;
+    --mat-3: #5A2134;
+    --mat-4: #2F3060;
     --court-ink: #EFF6EE;
     --accent: #3E9C87;
     --accent-ink: #07201B;
+    --accent-soft: #16332C;
+    --accent-line: #2F6355;
     --rest: #D7A549;
     --rest-soft: #2C2516;
     color-scheme: dark;
@@ -301,6 +313,10 @@
     font-variant-numeric: tabular-nums;
     color: var(--ink);
   }
+  .pill--accent {
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+  }
   .status {
     margin: 0;
     font-size: 13.5px;
@@ -349,16 +365,29 @@
   }
 
   /* ---------- the court ---------- */
+  /* Each court keeps its own mat colour, the way a club numbers its courts. */
   .court {
+    --mat: var(--mat-1);
     display: flex;
     flex-direction: column;
     gap: 8px;
     max-width: 520px;
   }
+  .court[data-court="2"] { --mat: var(--mat-2); }
+  .court[data-court="3"] { --mat: var(--mat-3); }
+  .court[data-court="4"] { --mat: var(--mat-4); }
+
   .court__head {
     display: flex;
-    align-items: baseline;
+    align-items: center;
     gap: 8px;
+  }
+  .court__dot {
+    flex: none;
+    width: 9px;
+    height: 9px;
+    border-radius: 2px;
+    background: var(--mat);
   }
   .court__no {
     font-family: var(--font-display);
@@ -377,8 +406,8 @@
     position: relative;
     aspect-ratio: 2.2 / 1;
     min-height: 132px;
-    background: var(--court);
-    background-image: linear-gradient(105deg, rgba(255,255,255,.05), rgba(0,0,0,.12));
+    background: var(--mat);
+    background-image: linear-gradient(105deg, rgba(255,255,255,.07), rgba(0,0,0,.14));
     border-radius: var(--r-sm);
     padding: 9px;
     display: grid;
@@ -436,7 +465,7 @@
     display: block;
     max-width: 100%;
     padding: 5px 11px;
-    background: rgba(10, 38, 33, .52);
+    background: rgba(0, 0, 0, .28);
     border: 1px solid rgba(244,249,243,.42);
     border-radius: 100px;
     color: var(--court-ink);
@@ -981,9 +1010,13 @@
   function courtCard(match, courtNo) {
     var card = document.createElement('article');
     card.className = 'court';
+    card.setAttribute('data-court', String(courtNo));
 
     var head = document.createElement('header');
     head.className = 'court__head';
+    var dot = document.createElement('span');
+    dot.className = 'court__dot';
+    head.appendChild(dot);
     var no = document.createElement('span');
     no.className = 'court__no';
     no.textContent = 'สนาม ' + courtNo;
@@ -1113,10 +1146,12 @@
     el.summary.appendChild(pill('รอบ', String(state.rounds.length)));
     el.summary.appendChild(pill('แมตช์', String(matches)));
     if (state.coverage) {
-      el.summary.appendChild(pill(
+      var cov = pill(
         per === 2 ? 'ได้เจอกันแล้ว' : 'ได้จับคู่กันแล้ว',
         state.coverage.done + '/' + state.coverage.total + ' คู่'
-      ));
+      );
+      cov.className += ' pill--accent';
+      el.summary.appendChild(cov);
     }
   }
 
