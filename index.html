@@ -308,6 +308,59 @@
   }
   .stat-list .v--rest { color: var(--rest); }
 
+  /* ---------- splitting the night's cost ---------- */
+  .fee { display: flex; flex-direction: column; gap: 6px; }
+  .fee__row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 76px 28px;
+    gap: 8px;
+    align-items: center;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .fee__row input {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    background: var(--surface-2);
+    border: 1px solid var(--line);
+    border-radius: var(--r-sm);
+    padding: 6px 8px;
+    width: 100%;
+    appearance: textfield;
+    -moz-appearance: textfield;
+  }
+  .fee__row input::-webkit-outer-spin-button,
+  .fee__row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  .fee__row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .fee__unit { font-size: 12px; color: var(--ink-3); }
+  .fee__out {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    margin-top: 3px;
+    padding: 10px 12px;
+    background: var(--accent-soft);
+    border: 1px solid var(--accent-line);
+    border-radius: var(--r-md);
+  }
+  .fee__each {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 600;
+    line-height: 1.25;
+    color: var(--ink);
+    font-variant-numeric: tabular-nums;
+  }
+  .fee__note {
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--ink-2);
+    font-variant-numeric: tabular-nums;
+  }
+
   /* ---------- board ---------- */
   .board { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
   .summary {
@@ -504,6 +557,23 @@
     color: rgba(244,249,243,.5);
   }
 
+  /* ---------- dealing a fresh draw ---------- */
+  @keyframes deal {
+    from { opacity: 0; transform: translateY(10px) scale(.985); }
+    to { opacity: 1; transform: none; }
+  }
+  .court--deal {
+    animation: deal .34s cubic-bezier(.2, .75, .3, 1) backwards;
+    animation-delay: calc(var(--i, 0) * 70ms);
+  }
+  @keyframes land {
+    0% { transform: scale(1.08); }
+    55% { transform: scale(.985); }
+    100% { transform: none; }
+  }
+  .name--land { animation: land .26s ease-out; }
+  .name--roll { opacity: .75; }
+
   /* ---------- resting ---------- */
   .rest {
     display: flex;
@@ -686,6 +756,31 @@
 
       <div class="field">
         <div class="field__label">
+          <span class="label">หารค่าก๊วน</span>
+          <span class="count" id="feeCount"></span>
+        </div>
+        <div class="fee">
+          <label class="fee__row">
+            <span>ค่าสนาม</span>
+            <input type="number" id="feeCourt" inputmode="numeric" min="0" step="10" value="400">
+            <span class="fee__unit">บาท</span>
+          </label>
+          <label class="fee__row">
+            <span>ลูกแบดที่ใช้</span>
+            <input type="number" id="feeShuttles" inputmode="numeric" min="0" step="1" value="6">
+            <span class="fee__unit">ลูก</span>
+          </label>
+          <label class="fee__row">
+            <span>ราคาลูกละ</span>
+            <input type="number" id="feePrice" inputmode="numeric" min="0" step="5" value="25">
+            <span class="fee__unit">บาท</span>
+          </label>
+        </div>
+        <div class="fee__out" id="feeOut"></div>
+      </div>
+
+      <div class="field">
+        <div class="field__label">
           <span class="label">สถิติวันนี้</span>
           <span class="count">ลง / พัก</span>
         </div>
@@ -719,6 +814,8 @@
   'use strict';
 
   var SAMPLE = ['ต้น', 'เบล', 'ฟ้า', 'กุ้ง', 'โอ๊ต', 'มิ้นท์', 'ปอนด์', 'เจ'];
+  // Typical club night: a couple of hours of court time and half a tube of shuttles.
+  var DEFAULT_FEE = { court: '400', shuttles: '6', price: '25' };
   var STORE_KEY = 'badminton-draw-v1';
   // The stats panel says "today". A club session can run past midnight, so the
   // tally is kept while it is still warm rather than until the date flips.
@@ -744,6 +841,11 @@
     nameHint: document.getElementById('nameHint'),
     modeSeg: document.getElementById('modeSeg'),
     planSeg: document.getElementById('planSeg'),
+    feeCourt: document.getElementById('feeCourt'),
+    feeShuttles: document.getElementById('feeShuttles'),
+    feePrice: document.getElementById('feePrice'),
+    feeCount: document.getElementById('feeCount'),
+    feeOut: document.getElementById('feeOut'),
     planHint: document.getElementById('planHint'),
     courtSeg: document.getElementById('courtSeg'),
     courtHint: document.getElementById('courtHint'),
@@ -1043,6 +1145,7 @@
     });
 
     render();
+    animateDraw();
 
     var msg;
     if (rotating) {
@@ -1081,6 +1184,7 @@
     }
     state.rounds[index] = fresh;
     render();
+    if (index === 0) animateDraw();
     save();
     setStatus('สุ่มรอบที่ ' + (index + 1) + ' ใหม่แล้ว — คนเดิม สลับสนามและคู่ใหม่', 'ok');
   }
@@ -1114,6 +1218,7 @@
     pressGroup(el.courtSeg, 'data-courts', state.courts);
     el.shuffle.textContent = drawLabel();
     syncPlanHint();
+    applyFee(DEFAULT_FEE);
     syncNames();
     syncCourtHint();
     render();
@@ -1193,6 +1298,7 @@
   }
 
   function renderRounds() {
+    stopRoll();
     el.rounds.textContent = '';
 
     if (!state.rounds.length) {
@@ -1240,7 +1346,14 @@
       var courts = document.createElement('div');
       courts.className = 'courts';
       round.forEach(function (match, i) {
-        courts.appendChild(courtCard(match, i + 1));
+        var card = courtCard(match, i + 1);
+        // Only the rounds anyone can see deal in; a long rotation would
+        // otherwise animate dozens of cards nobody has scrolled to.
+        if (idx < 3) {
+          card.classList.add('court--deal');
+          card.style.setProperty('--i', String(i));
+        }
+        courts.appendChild(card);
       });
 
       sec.appendChild(head);
@@ -1336,6 +1449,124 @@
     renderStats();
   }
 
+  /* ---------- splitting the night's cost ---------- */
+
+  var ROUND_TO = 5; // clubs collect in five-baht steps
+
+  function feeValue(input) {
+    var n = parseFloat(input.value);
+    return isFinite(n) && n > 0 ? n : 0;
+  }
+
+  function baht(n) {
+    return n.toLocaleString('th-TH', { maximumFractionDigits: 2 });
+  }
+
+  function feeLines(each, note) {
+    el.feeOut.textContent = '';
+    var big = document.createElement('span');
+    big.className = 'fee__each';
+    big.textContent = each;
+    el.feeOut.appendChild(big);
+    if (note) {
+      var sub = document.createElement('span');
+      sub.className = 'fee__note';
+      sub.textContent = note;
+      el.feeOut.appendChild(sub);
+    }
+  }
+
+  function syncFee() {
+    var court = feeValue(el.feeCourt);
+    var shuttles = feeValue(el.feeShuttles);
+    var price = feeValue(el.feePrice);
+    var total = court + shuttles * price;
+    var heads = state.players.length;
+
+    el.feeCount.textContent = heads ? '÷ ' + heads + ' คน' : '';
+
+    if (!total) {
+      feeLines('ยังไม่ได้ใส่ค่าใช้จ่าย', 'กรอกค่าสนามหรือค่าลูกแบด แล้วจะหารให้อัตโนมัติ');
+      return;
+    }
+    if (!heads) {
+      feeLines('รวม ' + baht(total) + ' บาท', 'ยังไม่มีรายชื่อให้หาร');
+      return;
+    }
+
+    var exact = total / heads;
+    var each = Math.ceil(exact / ROUND_TO) * ROUND_TO;
+    var collected = each * heads;
+    var note = 'รวม ' + baht(total) + ' (สนาม ' + baht(court) + ' + ลูก ' + baht(shuttles * price) +
+      ') ÷ ' + heads + ' คน = ' + baht(exact);
+    if (collected > total) {
+      note += ' · ปัดขึ้นแล้วเก็บได้ ' + baht(collected) + ' เหลือ ' + baht(collected - total);
+    }
+    feeLines('คนละ ' + baht(each) + ' บาท', note);
+  }
+
+  function feeState() {
+    return { court: el.feeCourt.value, shuttles: el.feeShuttles.value, price: el.feePrice.value };
+  }
+
+  function applyFee(raw) {
+    if (!raw || typeof raw !== 'object') return;
+    [['court', el.feeCourt], ['shuttles', el.feeShuttles], ['price', el.feePrice]]
+      .forEach(function (entry) {
+        var v = raw[entry[0]];
+        if (typeof v === 'number') v = String(v);
+        if (typeof v === 'string' && (v === '' || isFinite(parseFloat(v)))) entry[1].value = v;
+      });
+  }
+
+  /* ---------- dealing a fresh draw ---------- */
+
+  var rollTimer = null;
+
+  function stopRoll() {
+    if (rollTimer) {
+      clearInterval(rollTimer);
+      rollTimer = null;
+    }
+  }
+
+  function motionOk() {
+    return !(window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
+  }
+
+  // Spin the first round's name chips for a moment before they settle, so a
+  // draw reads as a draw instead of the board silently swapping contents.
+  function animateDraw() {
+    stopRoll();
+    if (!motionOk() || state.players.length < 2) return;
+
+    var chips = el.rounds.querySelectorAll('.round:first-child .name');
+    if (!chips.length) return;
+
+    var finals = [];
+    var i;
+    for (i = 0; i < chips.length; i++) {
+      finals.push(chips[i].textContent);
+      chips[i].classList.add('name--roll');
+    }
+
+    var pool = state.players;
+    var ticks = 0;
+    rollTimer = setInterval(function () {
+      ticks++;
+      for (var k = 0; k < chips.length; k++) {
+        chips[k].textContent = pool[Math.floor(Math.random() * pool.length)];
+      }
+      if (ticks < 6) return;
+      stopRoll();
+      for (var j = 0; j < chips.length; j++) {
+        chips[j].textContent = finals[j];
+        chips[j].classList.remove('name--roll');
+        chips[j].classList.add('name--land');
+      }
+    }, 55);
+  }
+
   /* ---------- input wiring ---------- */
 
   function syncNames() {
@@ -1346,6 +1577,7 @@
       ? 'ตัดชื่อซ้ำออก ' + parsed.dupes + ' ชื่อ'
       : 'บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ';
     syncCourtHint();
+    syncFee();
     save();
   }
 
@@ -1397,7 +1629,7 @@
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
         names: el.names.value, mode: state.mode, plan: state.plan, courts: state.courts,
-        savedAt: Date.now(),
+        fee: feeState(), savedAt: Date.now(),
         played: state.played, rested: state.rested, pairs: state.pairs,
         rounds: state.rounds, waiting: state.waiting,
         resting: state.resting, coverage: state.coverage
@@ -1452,6 +1684,13 @@
   }
 
   el.names.addEventListener('input', syncNames);
+
+  [el.feeCourt, el.feeShuttles, el.feePrice].forEach(function (input) {
+    input.addEventListener('input', function () {
+      syncFee();
+      save();
+    });
+  });
 
   el.modeSeg.addEventListener('click', function (e) {
     var btn = e.target.closest('button[data-mode]');
@@ -1603,6 +1842,7 @@
     el.names.value = SAMPLE.join('\n');
     usingSample = true;
   }
+  if (saved) applyFee(saved.fee);
   pressGroup(el.modeSeg, 'data-mode', state.mode);
   pressGroup(el.planSeg, 'data-plan', state.plan);
   pressGroup(el.courtSeg, 'data-courts', state.courts);
