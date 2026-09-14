@@ -913,7 +913,7 @@
     });
   }
 
-  function pairKey(a, b) { return a < b ? a + ' ' + b : b + ' ' + a; }
+  function pairKey(a, b) { return a < b ? a + '\u0000' + b : b + '\u0000' + a; }
 
   // Of the three ways to split 4 players, take the one with the least shared history.
   function splitFour(four) {
@@ -1813,8 +1813,10 @@
 
   var usingSample = false;
   var resumed = false;
+  var hadRoster = false;
   var saved = load();
   if (saved && typeof saved.names === 'string' && saved.names.trim()) {
+    hadRoster = true;
     el.names.value = saved.names;
     if (saved.mode === 'singles' || saved.mode === 'doubles') state.mode = saved.mode;
     if (saved.plan === 'random' || saved.plan === 'rotate') state.plan = saved.plan;
@@ -1864,6 +1866,13 @@
     } else {
       setStatus('พร้อมเริ่มแล้ว — กด' + drawLabel() + 'ได้เลย', 'ok');
     }
+  } else if (hadRoster) {
+    // The roster came back but the session went cold. Drawing here would book a
+    // round nobody played into a tally that just started at zero, and last
+    // night's roster is rarely tonight's, so the club draws when it is ready.
+    render();
+    setStatus('กลับมาอีกครั้ง — เว้นไปเกิน 12 ชั่วโมง เริ่มนับสถิติใหม่ · แก้รายชื่อให้ตรงกับคนที่มาวันนี้ แล้วกด' +
+      drawLabel(), 'ok');
   } else {
     draw();
   }
