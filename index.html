@@ -643,6 +643,9 @@
 
   var SAMPLE = ['ต้น', 'เบล', 'ฟ้า', 'กุ้ง', 'โอ๊ต', 'มิ้นท์', 'ปอนด์', 'เจ'];
   var STORE_KEY = 'badminton-draw-v1';
+  // The stats panel says "today". A club session can run past midnight, so the
+  // tally is kept while it is still warm rather than until the date flips.
+  var SESSION_MS = 12 * 60 * 60 * 1000;
 
   var state = {
     mode: 'doubles',
@@ -930,6 +933,7 @@
 
     if (players.length < per) {
       render();
+      save();
       setStatus('ต้องมีผู้เล่นอย่างน้อย ' + per + ' คนสำหรับการแข่ง' + fmtLabel() + ' (ตอนนี้ ' + players.length + ' คน)', 'warn');
       return;
     }
@@ -977,6 +981,7 @@
         fmtLabel() + ' ลงพร้อมกันได้ ' + used + ' สนาม (ครบ ' + state.courts + ' สนามต้องมี ' +
         (state.courts * per) + ' คนขึ้นไป)';
     }
+    save();
     setStatus(msg, 'ok');
   }
 
@@ -996,6 +1001,7 @@
     }
     state.rounds[index] = fresh;
     render();
+    save();
     setStatus('สุ่มรอบที่ ' + (index + 1) + ' ใหม่แล้ว — คนเดิม สลับสนามและคู่ใหม่', 'ok');
   }
 
@@ -1008,6 +1014,7 @@
     state.rested = {};
     state.pairs = {};
     render();
+    save();
     setStatus('ล้างผลและสถิติแล้ว กด “' + drawLabel() + '” เพื่อเริ่มใหม่', 'ok');
   }
 
@@ -1285,9 +1292,45 @@
   function save() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        names: el.names.value, mode: state.mode, plan: state.plan, courts: state.courts
+        names: el.names.value, mode: state.mode, plan: state.plan, courts: state.courts,
+        savedAt: Date.now(),
+        played: state.played, rested: state.rested, pairs: state.pairs,
+        rounds: state.rounds, waiting: state.waiting,
+        resting: state.resting, coverage: state.coverage
       }));
     } catch (e) { /* private window or blocked storage — nothing to do */ }
+  }
+
+  // Anything read back was last touched by hand in devtools, so check the shape
+  // before trusting it: a tally is a name -> positive number map.
+  function countsFrom(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(raw).forEach(function (name) {
+      var n = raw[name];
+      if (typeof n === 'number' && isFinite(n) && n > 0) out[name] = n;
+    });
+    return out;
+  }
+
+  function isSide(side) {
+    return Array.isArray(side) && side.length > 0 &&
+      side.every(function (n) { return typeof n === 'string' && n; });
+  }
+
+  // A draw is rounds of matches, each match two sides of names.
+  function roundsFrom(raw) {
+    if (!Array.isArray(raw) || !raw.length) return null;
+    var ok = raw.every(function (round) {
+      return Array.isArray(round) && round.length > 0 && round.every(function (match) {
+        return Array.isArray(match) && match.length === 2 && match.every(isSide);
+      });
+    });
+    return ok ? raw : null;
+  }
+
+  function namesFrom(raw) {
+    return Array.isArray(raw) ? raw.filter(function (n) { return typeof n === 'string' && n; }) : [];
   }
 
   function load() {
@@ -1357,12 +1400,32 @@
   /* ---------- start in a working state ---------- */
 
   var usingSample = false;
+  var resumed = false;
   var saved = load();
   if (saved && typeof saved.names === 'string' && saved.names.trim()) {
     el.names.value = saved.names;
     if (saved.mode === 'singles' || saved.mode === 'doubles') state.mode = saved.mode;
     if (saved.plan === 'random' || saved.plan === 'rotate') state.plan = saved.plan;
     if (saved.courts >= 1 && saved.courts <= 4) state.courts = saved.courts;
+
+    if (typeof saved.savedAt === 'number' && Date.now() - saved.savedAt < SESSION_MS) {
+      state.played = countsFrom(saved.played);
+      state.rested = countsFrom(saved.rested);
+      state.pairs = countsFrom(saved.pairs);
+      var rounds = roundsFrom(saved.rounds);
+      if (rounds) {
+        // Drawing again here would count everyone a second time, so the saved
+        // draw is put back on screen exactly as it was left.
+        state.rounds = rounds;
+        state.waiting = rounds.map(function (round, i) {
+          return namesFrom(Array.isArray(saved.waiting) ? saved.waiting[i] : null);
+        });
+        state.resting = namesFrom(saved.resting);
+        state.coverage = saved.coverage && typeof saved.coverage.done === 'number' &&
+          typeof saved.coverage.total === 'number' ? saved.coverage : null;
+        resumed = true;
+      }
+    }
   } else {
     el.names.value = SAMPLE.join('\n');
     usingSample = true;
@@ -1377,6 +1440,13 @@
   if (usingSample) {
     el.nameHint.textContent = 'ตัวอย่าง 8 ชื่อ — ลบแล้วพิมพ์ชื่อก๊วนของคุณทับได้เลย';
   }
-  draw();
+  if (resumed) {
+    render();
+    var backMatches = state.rounds.reduce(function (n, r) { return n + r.length; }, 0);
+    setStatus('กลับมาที่ค้างไว้ — ' + backMatches + ' แมตช์ ใน ' + state.rounds.length +
+      ' รอบ · สถิติลง/พักยังอยู่ครบ กด' + drawLabel() + 'เมื่อพร้อมรอบต่อไป', 'ok');
+  } else {
+    draw();
+  }
 }());
 </script>
