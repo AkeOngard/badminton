@@ -584,6 +584,8 @@
   .btn--hold:hover .btn__hold { background: var(--danger-soft); }
   .btn__label { position: relative; }
 
+  /* Browsers that do not know <dialog> have no UA rule to hide it. */
+  .modal:not([open]) { display: none; }
   .modal {
     max-width: 380px;
     width: calc(100% - 32px);
@@ -1504,6 +1506,7 @@
   var holdFrom = 0;
   var holdRaf = 0;
   var holdFired = false;
+  var canDialog = !!(el.wipeDlg && typeof el.wipeDlg.showModal === 'function');
 
   function stopHold() {
     if (holdRaf) cancelAnimationFrame(holdRaf);
@@ -1518,13 +1521,13 @@
       holdRaf = requestAnimationFrame(holdTick);
       return;
     }
-    holdFired = true; // so the click ending this press does not also reset
+    holdFired = true;
     stopHold();
     askWipe();
   }
 
   function askWipe() {
-    if (el.wipeDlg && typeof el.wipeDlg.showModal === 'function') {
+    if (canDialog) {
       el.wipeDlg.showModal();
       return;
     }
@@ -1547,12 +1550,19 @@
   el.reset.addEventListener('contextmenu', function (e) { e.preventDefault(); });
 
   el.reset.addEventListener('click', function (e) {
-    if (holdFired) { holdFired = false; return; } // the hold already asked
-    if (e.shiftKey) { askWipe(); return; }        // same door for the keyboard
+    // The click that ends a completed hold must not also run the small reset.
+    // When that press ends on the modal backdrop no click arrives at all and the
+    // flag stays up, so a keyboard activation — which carries detail 0, unlike
+    // any click a pointer makes — is never the one swallowed.
+    if (holdFired && e.detail > 0) {
+      holdFired = false;
+      return;
+    }
+    if (e.shiftKey) { askWipe(); return; } // same door for the keyboard
     resetAll();
   });
 
-  if (el.wipeDlg) {
+  if (canDialog) {
     el.wipeCancel.addEventListener('click', function () { el.wipeDlg.close(); });
     el.wipeOk.addEventListener('click', function () {
       el.wipeDlg.close();
@@ -1575,10 +1585,11 @@
       state.played = countsFrom(saved.played);
       state.rested = countsFrom(saved.rested);
       state.pairs = countsFrom(saved.pairs);
+      // The session is picked up as it was left, drawn or not. Drawing here
+      // instead would add a round nobody played to the tally just restored.
+      resumed = true;
       var rounds = roundsFrom(saved.rounds);
       if (rounds) {
-        // Drawing again here would count everyone a second time, so the saved
-        // draw is put back on screen exactly as it was left.
         state.rounds = rounds;
         state.waiting = rounds.map(function (round, i) {
           return namesFrom(Array.isArray(saved.waiting) ? saved.waiting[i] : null);
@@ -1586,7 +1597,6 @@
         state.resting = namesFrom(saved.resting);
         state.coverage = saved.coverage && typeof saved.coverage.done === 'number' &&
           typeof saved.coverage.total === 'number' ? saved.coverage : null;
-        resumed = true;
       }
     }
   } else {
@@ -1606,8 +1616,14 @@
   if (resumed) {
     render();
     var backMatches = state.rounds.reduce(function (n, r) { return n + r.length; }, 0);
-    setStatus('กลับมาที่ค้างไว้ — ' + backMatches + ' แมตช์ ใน ' + state.rounds.length +
-      ' รอบ · สถิติลง/พักยังอยู่ครบ กด' + drawLabel() + 'เมื่อพร้อมรอบต่อไป', 'ok');
+    if (backMatches) {
+      setStatus('กลับมาที่ค้างไว้ — ' + backMatches + ' แมตช์ ใน ' + state.rounds.length +
+        ' รอบ · สถิติลง/พักยังอยู่ครบ กด' + drawLabel() + 'เมื่อพร้อมรอบต่อไป', 'ok');
+    } else if (Object.keys(state.played).length) {
+      setStatus('กลับมาที่ค้างไว้ — สถิติลง/พักยังอยู่ครบ กด' + drawLabel() + 'เพื่อเริ่มรอบต่อไป', 'ok');
+    } else {
+      setStatus('พร้อมเริ่มแล้ว — กด' + drawLabel() + 'ได้เลย', 'ok');
+    }
   } else {
     draw();
   }
