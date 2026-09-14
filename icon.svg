@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180" role="img" aria-label="ลูกขนไก่">
+  <!-- Home screen icons are masked into a square, so the mat colour runs full bleed. -->
+  <defs>
+    <linearGradient id="mat" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#16584C"/>
+      <stop offset="1" stop-color="#0C3A33"/>
+    </linearGradient>
+  </defs>
+  <rect width="180" height="180" fill="url(#mat)"/>
+  <!-- The header shuttlecock, scaled up from its 48-unit box and centred. -->
+  <g transform="translate(-6 6.4) scale(4)">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.5 10.5 L17.5 32.5 M37.5 10.5 L30.5 32.5 M10.5 10.5 Q24 3.5 37.5 10.5"
+            stroke="#EAF3EE" stroke-width="1.6"/>
+      <path d="M17.8 8.6 L20.8 32.5 M24 7 L24 32.5 M30.2 8.6 L27.2 32.5 M13.6 21 Q24 25.4 34.4 21"
+            stroke="#A9CFC1" stroke-width="1.1"/>
+    </g>
+    <path d="M17.5 31.8 h13 a6.5 6.5 0 0 1 -13 0 z" fill="#F2E7CE"/>
+  </g>
+</svg>
