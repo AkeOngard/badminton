@@ -36,6 +36,9 @@
     --accent-line: #9EC3B6;
     --rest: #93681B;
     --rest-soft: #F2E7CE;
+    --danger: #A3231B;
+    --danger-ink: #FFF4F2;
+    --danger-soft: #F6D9D5;
 
     --font-display: 'Chakra Petch', 'IBM Plex Sans Thai', system-ui, sans-serif;
     --font-body: 'IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif;
@@ -69,6 +72,9 @@
       --accent-line: #2F6355;
       --rest: #D7A549;
       --rest-soft: #2C2516;
+      --danger: #E4736A;
+      --danger-ink: #2A0E0B;
+      --danger-soft: #3A1A17;
       color-scheme: dark;
     }
   }
@@ -94,6 +100,9 @@
     --accent-line: #2F6355;
     --rest: #D7A549;
     --rest-soft: #2C2516;
+    --danger: #E4736A;
+    --danger-ink: #2A0E0B;
+    --danger-soft: #3A1A17;
     color-scheme: dark;
   }
 
@@ -552,6 +561,56 @@
     font-variant-numeric: tabular-nums;
   }
 
+  /* ---------- press and hold to wipe everything ---------- */
+
+  .btn--hold {
+    position: relative;
+    overflow: hidden;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: manipulation;
+  }
+  /* Painted frame by frame from JS rather than by a transition, so the reduced
+     motion rule below cannot leave the bar full while the press just started. */
+  .btn__hold {
+    position: absolute;
+    inset: 0;
+    background: var(--danger-soft);
+    transform: scaleX(var(--hold, 0));
+    transform-origin: left center;
+    pointer-events: none;
+  }
+  .btn--hold:hover .btn__hold { background: var(--danger-soft); }
+  .btn__label { position: relative; }
+
+  .modal {
+    max-width: 380px;
+    width: calc(100% - 32px);
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--r-lg);
+    background: var(--surface);
+    color: var(--ink);
+    font-family: var(--font-body);
+  }
+  .modal::backdrop { background: rgba(8, 16, 14, .55); }
+  .modal__title {
+    margin: 0 0 8px;
+    font-family: var(--font-display);
+    font-size: 18px;
+    color: var(--danger);
+  }
+  .modal__body {
+    margin: 0 0 18px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: var(--ink-2);
+  }
+  .modal__actions { display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+  .btn--danger { background: var(--danger); color: var(--danger-ink); font-size: 14px; }
+  .btn--danger:hover { filter: brightness(1.08); }
+
   @media (prefers-reduced-motion: reduce) {
     * { transition: none !important; animation: none !important; }
   }
@@ -616,7 +675,11 @@
 
       <div class="actions">
         <button type="button" class="btn btn--primary" id="shuffle">สุ่มจับคู่</button>
-        <button type="button" class="btn btn--ghost" id="reset">รีเซ็ตการจับคู่และสถิติ</button>
+        <button type="button" class="btn btn--ghost btn--hold" id="reset">
+          <span class="btn__hold" aria-hidden="true"></span>
+          <span class="btn__label">รีเซ็ตการจับคู่และสถิติ</span>
+        </button>
+        <p class="hint">กดปุ่มรีเซ็ตค้างไว้ 1 วินาที เพื่อล้างข้อมูลทั้งหมดรวมรายชื่อ</p>
       </div>
 
       <div class="field">
@@ -637,12 +700,27 @@
   </div>
 </div>
 
+<dialog class="modal" id="wipeDlg" aria-labelledby="wipeTitle">
+  <h2 class="modal__title" id="wipeTitle">ล้างข้อมูลทั้งหมด?</h2>
+  <p class="modal__body">
+    รายชื่อผู้เล่น สถิติลง/พัก ผลจับคู่ และการตั้งค่าทั้งหมด จะถูกลบออกจากเครื่องนี้
+    และกู้คืนไม่ได้ — ถ้าอยากเก็บรายชื่อไว้ กด “ยกเลิก” แล้วใช้ปุ่มรีเซ็ตแบบกดสั้นแทน
+  </p>
+  <div class="modal__actions">
+    <button type="button" class="btn btn--ghost" id="wipeCancel">ยกเลิก</button>
+    <button type="button" class="btn btn--danger" id="wipeOk">ล้างทั้งหมด</button>
+  </div>
+</dialog>
+
 <script>
 (function () {
   'use strict';
 
   var SAMPLE = ['ต้น', 'เบล', 'ฟ้า', 'กุ้ง', 'โอ๊ต', 'มิ้นท์', 'ปอนด์', 'เจ'];
   var STORE_KEY = 'badminton-draw-v1';
+  // The stats panel says "today". A club session can run past midnight, so the
+  // tally is kept while it is still warm rather than until the date flips.
+  var SESSION_MS = 12 * 60 * 60 * 1000;
 
   var state = {
     mode: 'doubles',
@@ -669,6 +747,9 @@
     courtHint: document.getElementById('courtHint'),
     shuffle: document.getElementById('shuffle'),
     reset: document.getElementById('reset'),
+    wipeDlg: document.getElementById('wipeDlg'),
+    wipeOk: document.getElementById('wipeOk'),
+    wipeCancel: document.getElementById('wipeCancel'),
     stats: document.getElementById('stats'),
     summary: document.getElementById('summary'),
     status: document.getElementById('status'),
@@ -930,6 +1011,7 @@
 
     if (players.length < per) {
       render();
+      save();
       setStatus('ต้องมีผู้เล่นอย่างน้อย ' + per + ' คนสำหรับการแข่ง' + fmtLabel() + ' (ตอนนี้ ' + players.length + ' คน)', 'warn');
       return;
     }
@@ -977,6 +1059,7 @@
         fmtLabel() + ' ลงพร้อมกันได้ ' + used + ' สนาม (ครบ ' + state.courts + ' สนามต้องมี ' +
         (state.courts * per) + ' คนขึ้นไป)';
     }
+    save();
     setStatus(msg, 'ok');
   }
 
@@ -996,6 +1079,7 @@
     }
     state.rounds[index] = fresh;
     render();
+    save();
     setStatus('สุ่มรอบที่ ' + (index + 1) + ' ใหม่แล้ว — คนเดิม สลับสนามและคู่ใหม่', 'ok');
   }
 
@@ -1008,7 +1092,32 @@
     state.rested = {};
     state.pairs = {};
     render();
+    save();
     setStatus('ล้างผลและสถิติแล้ว กด “' + drawLabel() + '” เพื่อเริ่มใหม่', 'ok');
+  }
+
+  // The whole slate: the roster and the settings go too, and the browser is
+  // left with nothing stored for this app.
+  function wipeAll() {
+    state.mode = 'doubles';
+    state.plan = 'random';
+    state.courts = 2;
+    state.played = {};
+    state.rested = {};
+    state.pairs = {};
+    clearDraw();
+    el.names.value = '';
+    pressGroup(el.modeSeg, 'data-mode', state.mode);
+    pressGroup(el.planSeg, 'data-plan', state.plan);
+    pressGroup(el.courtSeg, 'data-courts', state.courts);
+    el.shuffle.textContent = drawLabel();
+    syncPlanHint();
+    syncNames();
+    syncCourtHint();
+    render();
+    // syncNames() has just written a fresh record, so the key goes last.
+    try { localStorage.removeItem(STORE_KEY); } catch (e) { /* nothing to clear */ }
+    setStatus('ล้างข้อมูลทั้งหมดแล้ว — พิมพ์รายชื่อก๊วนใหม่ได้เลย', 'ok');
   }
 
   /* ---------- render ---------- */
@@ -1285,9 +1394,45 @@
   function save() {
     try {
       localStorage.setItem(STORE_KEY, JSON.stringify({
-        names: el.names.value, mode: state.mode, plan: state.plan, courts: state.courts
+        names: el.names.value, mode: state.mode, plan: state.plan, courts: state.courts,
+        savedAt: Date.now(),
+        played: state.played, rested: state.rested, pairs: state.pairs,
+        rounds: state.rounds, waiting: state.waiting,
+        resting: state.resting, coverage: state.coverage
       }));
     } catch (e) { /* private window or blocked storage — nothing to do */ }
+  }
+
+  // Anything read back was last touched by hand in devtools, so check the shape
+  // before trusting it: a tally is a name -> positive number map.
+  function countsFrom(raw) {
+    var out = {};
+    if (!raw || typeof raw !== 'object') return out;
+    Object.keys(raw).forEach(function (name) {
+      var n = raw[name];
+      if (typeof n === 'number' && isFinite(n) && n > 0) out[name] = n;
+    });
+    return out;
+  }
+
+  function isSide(side) {
+    return Array.isArray(side) && side.length > 0 &&
+      side.every(function (n) { return typeof n === 'string' && n; });
+  }
+
+  // A draw is rounds of matches, each match two sides of names.
+  function roundsFrom(raw) {
+    if (!Array.isArray(raw) || !raw.length) return null;
+    var ok = raw.every(function (round) {
+      return Array.isArray(round) && round.length > 0 && round.every(function (match) {
+        return Array.isArray(match) && match.length === 2 && match.every(isSide);
+      });
+    });
+    return ok ? raw : null;
+  }
+
+  function namesFrom(raw) {
+    return Array.isArray(raw) ? raw.filter(function (n) { return typeof n === 'string' && n; }) : [];
   }
 
   function load() {
@@ -1352,17 +1497,98 @@
   });
 
   el.shuffle.addEventListener('click', draw);
-  el.reset.addEventListener('click', resetAll);
+
+  /* ---------- hold the reset button to wipe everything ---------- */
+
+  var HOLD_MS = 1000;
+  var holdFrom = 0;
+  var holdRaf = 0;
+  var holdFired = false;
+
+  function stopHold() {
+    if (holdRaf) cancelAnimationFrame(holdRaf);
+    holdRaf = 0;
+    el.reset.style.setProperty('--hold', 0);
+  }
+
+  function holdTick(now) {
+    var done = Math.min(1, (now - holdFrom) / HOLD_MS);
+    el.reset.style.setProperty('--hold', done);
+    if (done < 1) {
+      holdRaf = requestAnimationFrame(holdTick);
+      return;
+    }
+    holdFired = true; // so the click ending this press does not also reset
+    stopHold();
+    askWipe();
+  }
+
+  function askWipe() {
+    if (el.wipeDlg && typeof el.wipeDlg.showModal === 'function') {
+      el.wipeDlg.showModal();
+      return;
+    }
+    if (window.confirm('ล้างข้อมูลทั้งหมดในเครื่องนี้ รวมรายชื่อผู้เล่น สถิติ และการตั้งค่า?')) {
+      wipeAll();
+    }
+  }
+
+  el.reset.addEventListener('pointerdown', function (e) {
+    if (e.pointerType === 'mouse' && e.button !== 0) return;
+    holdFired = false;
+    holdFrom = performance.now();
+    stopHold();
+    holdRaf = requestAnimationFrame(holdTick);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(function (ev) {
+    el.reset.addEventListener(ev, stopHold);
+  });
+  // A long press on iOS would otherwise raise the text selection callout.
+  el.reset.addEventListener('contextmenu', function (e) { e.preventDefault(); });
+
+  el.reset.addEventListener('click', function (e) {
+    if (holdFired) { holdFired = false; return; } // the hold already asked
+    if (e.shiftKey) { askWipe(); return; }        // same door for the keyboard
+    resetAll();
+  });
+
+  if (el.wipeDlg) {
+    el.wipeCancel.addEventListener('click', function () { el.wipeDlg.close(); });
+    el.wipeOk.addEventListener('click', function () {
+      el.wipeDlg.close();
+      wipeAll();
+    });
+  }
 
   /* ---------- start in a working state ---------- */
 
   var usingSample = false;
+  var resumed = false;
   var saved = load();
   if (saved && typeof saved.names === 'string' && saved.names.trim()) {
     el.names.value = saved.names;
     if (saved.mode === 'singles' || saved.mode === 'doubles') state.mode = saved.mode;
     if (saved.plan === 'random' || saved.plan === 'rotate') state.plan = saved.plan;
     if (saved.courts >= 1 && saved.courts <= 4) state.courts = saved.courts;
+
+    if (typeof saved.savedAt === 'number' && Date.now() - saved.savedAt < SESSION_MS) {
+      state.played = countsFrom(saved.played);
+      state.rested = countsFrom(saved.rested);
+      state.pairs = countsFrom(saved.pairs);
+      var rounds = roundsFrom(saved.rounds);
+      if (rounds) {
+        // Drawing again here would count everyone a second time, so the saved
+        // draw is put back on screen exactly as it was left.
+        state.rounds = rounds;
+        state.waiting = rounds.map(function (round, i) {
+          return namesFrom(Array.isArray(saved.waiting) ? saved.waiting[i] : null);
+        });
+        state.resting = namesFrom(saved.resting);
+        state.coverage = saved.coverage && typeof saved.coverage.done === 'number' &&
+          typeof saved.coverage.total === 'number' ? saved.coverage : null;
+        resumed = true;
+      }
+    }
   } else {
     el.names.value = SAMPLE.join('\n');
     usingSample = true;
@@ -1377,6 +1603,13 @@
   if (usingSample) {
     el.nameHint.textContent = 'ตัวอย่าง 8 ชื่อ — ลบแล้วพิมพ์ชื่อก๊วนของคุณทับได้เลย';
   }
-  draw();
+  if (resumed) {
+    render();
+    var backMatches = state.rounds.reduce(function (n, r) { return n + r.length; }, 0);
+    setStatus('กลับมาที่ค้างไว้ — ' + backMatches + ' แมตช์ ใน ' + state.rounds.length +
+      ' รอบ · สถิติลง/พักยังอยู่ครบ กด' + drawLabel() + 'เมื่อพร้อมรอบต่อไป', 'ok');
+  } else {
+    draw();
+  }
 }());
 </script>
