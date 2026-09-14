@@ -6,6 +6,11 @@
 <!-- iOS ignores SVG and data: URIs on the home screen, so it needs a real PNG. -->
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="manifest" href="manifest.webmanifest">
+<meta name="mobile-web-app-capable" content="yes">
+<!-- iOS has no install prompt: this is what makes a home-screen launch open
+     without Safari's chrome, the way the manifest does on Android. -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="สุ่มคู่ลงสนาม">
 <meta name="application-name" content="สุ่มคู่ลงสนาม">
 <meta name="theme-color" media="(prefers-color-scheme: light)" content="#EDF1EB">
@@ -280,6 +285,17 @@
     font-size: 14px;
   }
   .btn--ghost:hover { color: var(--ink); border-color: var(--ink-3); }
+
+  /* Only ever on screen when the browser says the app can be installed. */
+  [hidden] { display: none !important; }
+  .btn--install {
+    margin-top: 2px;
+    font-size: 14px;
+    background: var(--accent-soft);
+    border-color: var(--accent-line);
+    color: var(--ink);
+  }
+  .btn--install:hover { border-color: var(--accent); }
 
   .stat-list {
     list-style: none;
@@ -752,6 +768,9 @@
           <span class="btn__label">รีเซ็ตการจับคู่และสถิติ</span>
         </button>
         <p class="hint">กดปุ่มรีเซ็ตค้างไว้ 1 วินาที เพื่อล้างข้อมูลทั้งหมดรวมรายชื่อ</p>
+        <button type="button" class="btn btn--install" id="install" hidden>
+          ติดตั้งเป็นแอปบนเครื่อง
+        </button>
       </div>
 
       <div class="field">
@@ -851,6 +870,7 @@
     courtHint: document.getElementById('courtHint'),
     shuffle: document.getElementById('shuffle'),
     reset: document.getElementById('reset'),
+    install: document.getElementById('install'),
     wipeDlg: document.getElementById('wipeDlg'),
     wipeOk: document.getElementById('wipeOk'),
     wipeCancel: document.getElementById('wipeCancel'),
@@ -1808,6 +1828,48 @@
       wipeAll();
     });
   }
+
+  /* ---------- installing as an app ---------- */
+
+  // The worker is what makes Android offer a real install, and it keeps the app
+  // opening in a gym with no signal. It needs https (or localhost), so opening
+  // index.html straight off the disk simply skips it.
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function () {
+      try {
+        navigator.serviceWorker.register('sw.js').catch(function () {
+          /* blocked or unsupported here — the app runs the same, just online only */
+        });
+      } catch (e) { /* same */ }
+    });
+  }
+
+  var installPrompt = null;
+
+  window.addEventListener('beforeinstallprompt', function (e) {
+    e.preventDefault(); // shown on our own button instead of the browser's banner
+    installPrompt = e;
+    el.install.hidden = false;
+  });
+
+  el.install.addEventListener('click', function () {
+    if (!installPrompt) return;
+    el.install.disabled = true;
+    installPrompt.prompt();
+    installPrompt.userChoice.then(function (choice) {
+      installPrompt = null;
+      el.install.disabled = false;
+      if (choice && choice.outcome === 'accepted') el.install.hidden = true;
+    }).catch(function () {
+      installPrompt = null;
+      el.install.disabled = false;
+    });
+  });
+
+  window.addEventListener('appinstalled', function () {
+    installPrompt = null;
+    el.install.hidden = true;
+  });
 
   /* ---------- start in a working state ---------- */
 

@@ -1,11 +1,17 @@
 {
+  "id": ".",
   "name": "สุ่มคู่ลงสนาม — ตัวช่วยจัดคิวแบดมินตัน",
   "short_name": "สุ่มคู่ลงสนาม",
   "description": "สุ่มจับคู่ตีแบดตามรายชื่อที่กรอก และจัดคิวลงสนามให้ทุกคนได้เล่นทั่วถึง",
   "lang": "th",
+  "dir": "ltr",
   "start_url": ".",
   "scope": ".",
-  "display": "browser",
+  "display": "standalone",
+  "display_override": [
+    "standalone",
+    "minimal-ui"
+  ],
   "background_color": "#EDF1EB",
   "theme_color": "#13544A",
   "icons": [
