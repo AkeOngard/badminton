@@ -208,6 +208,9 @@
   }
   .hint { margin: 0; font-size: 12.5px; color: var(--ink-3); }
 
+  /* A court count the head count cannot fill yet — still selectable, just muted. */
+  .segment button[data-over="true"] { opacity: .45; }
+
   .segment {
     display: grid;
     grid-auto-flow: column;
@@ -600,6 +603,7 @@
           <button type="button" data-courts="3" aria-pressed="false"><span class="mono">3</span></button>
           <button type="button" data-courts="4" aria-pressed="false"><span class="mono">4</span></button>
         </div>
+        <p class="hint" id="courtHint"></p>
       </div>
 
       <div class="actions">
@@ -654,6 +658,7 @@
     planSeg: document.getElementById('planSeg'),
     planHint: document.getElementById('planHint'),
     courtSeg: document.getElementById('courtSeg'),
+    courtHint: document.getElementById('courtHint'),
     shuffle: document.getElementById('shuffle'),
     reset: document.getElementById('reset'),
     stats: document.getElementById('stats'),
@@ -667,6 +672,15 @@
   function perCourt() { return state.mode === 'singles' ? 2 : 4; }
   function fmtLabel() { return state.mode === 'singles' ? 'เดี่ยว 1:1' : 'คู่ 2:2'; }
   function drawLabel() { return state.plan === 'rotate' ? 'สร้างตารางหมุนเวียน' : 'สุ่มจับคู่'; }
+
+  // Nobody can stand on two courts at once, so the head count caps how many
+  // courts a round can actually open, no matter how many were picked.
+  function courtCapacity() { return Math.floor(state.players.length / perCourt()); }
+
+  // The most courts any drawn round managed to fill.
+  function courtsUsed() {
+    return state.rounds.reduce(function (n, r) { return Math.max(n, r.length); }, 0);
+  }
 
   function clearDraw() {
     state.rounds = [];
@@ -949,6 +963,12 @@
         msg += ' · ' + state.resting.length + ' คนพักชุดนี้ และจะได้ลงก่อนในการสุ่มครั้งถัดไป';
       }
     }
+    var used = courtsUsed();
+    if (used < state.courts) {
+      msg += ' · เปิดได้ ' + used + ' จาก ' + state.courts + ' สนาม — ' + players.length + ' คนแบบ' +
+        fmtLabel() + ' ลงพร้อมกันได้ ' + used + ' สนาม (ครบ ' + state.courts + ' สนามต้องมี ' +
+        (state.courts * per) + ' คนขึ้นไป)';
+    }
     setStatus(msg, 'ok');
   }
 
@@ -1142,7 +1162,14 @@
     el.summary.appendChild(pill('ผู้เล่น', state.players.length + ' คน'));
     el.summary.appendChild(pill('รูปแบบ', fmtLabel()));
     el.summary.appendChild(pill('คน/สนาม', String(per)));
-    el.summary.appendChild(pill('สนาม', String(state.courts)));
+    var used = courtsUsed();
+    var short = state.rounds.length > 0 && used < state.courts;
+    var courtPill = pill('สนาม', short ? used + '/' + state.courts : String(state.courts));
+    if (short) {
+      courtPill.title = 'เปิดได้ ' + used + ' สนาม จากที่เลือกไว้ ' + state.courts +
+        ' สนาม เพราะจำนวนผู้เล่นลงพร้อมกันได้เท่านี้';
+    }
+    el.summary.appendChild(courtPill);
     el.summary.appendChild(pill('รอบ', String(state.rounds.length)));
     el.summary.appendChild(pill('แมตช์', String(matches)));
     if (state.coverage) {
@@ -1199,6 +1226,7 @@
     el.nameHint.textContent = parsed.dupes
       ? 'ตัดชื่อซ้ำออก ' + parsed.dupes + ' ชื่อ'
       : 'บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ';
+    syncCourtHint();
     save();
   }
 
@@ -1213,6 +1241,37 @@
 
   function syncPlanHint() {
     el.planHint.textContent = planHintText();
+  }
+
+  function courtHintText() {
+    var per = perCourt();
+    var cap = courtCapacity();
+    var n = state.players.length;
+    if (!n) return 'จำนวนคนเป็นตัวกำหนดว่าเปิดได้จริงกี่สนาม — ' + per + ' คนต่อ 1 สนาม';
+    if (cap < 1) {
+      return 'ยังเปิดสนามไม่ได้ — แบบ' + fmtLabel() + ' ต้องมีอย่างน้อย ' + per + ' คน (ตอนนี้ ' + n + ' คน)';
+    }
+    if (cap < state.courts) {
+      return n + ' คนแบบ' + fmtLabel() + ' ลงพร้อมกันได้ ' + cap + ' สนาม — ครบ ' + state.courts +
+        ' สนามต้องมี ' + (state.courts * per) + ' คนขึ้นไป';
+    }
+    return 'รอบละ ' + state.courts + ' สนาม · ลงพร้อมกัน ' + (state.courts * per) + ' คน' +
+      (n > state.courts * per ? ' · อีก ' + (n - state.courts * per) + ' คนรอคิว' : '');
+  }
+
+  function syncCourtHint() {
+    var cap = courtCapacity();
+    el.courtHint.textContent = courtHintText();
+    Array.prototype.forEach.call(el.courtSeg.querySelectorAll('button'), function (b) {
+      var n = parseInt(b.getAttribute('data-courts'), 10);
+      var over = state.players.length > 0 && n > cap;
+      b.setAttribute('data-over', over ? 'true' : 'false');
+      if (over) {
+        b.title = 'ต้องมี ' + (n * perCourt()) + ' คนขึ้นไปจึงจะเปิด ' + n + ' สนามพร้อมกัน';
+      } else {
+        b.removeAttribute('title');
+      }
+    });
   }
 
   function save() {
@@ -1246,6 +1305,7 @@
     pressGroup(el.modeSeg, 'data-mode', state.mode);
     clearDraw();
     syncPlanHint();
+    syncCourtHint();
     save();
     render();
     setStatus('เปลี่ยนเป็น' + fmtLabel() + ' (' + perCourt() + ' คนต่อสนาม) — กด' + drawLabel() + 'อีกครั้ง', 'ok');
@@ -1270,9 +1330,17 @@
     state.courts = parseInt(btn.getAttribute('data-courts'), 10);
     pressGroup(el.courtSeg, 'data-courts', state.courts);
     clearDraw();
+    syncCourtHint();
     save();
     render();
-    setStatus('ตั้งเป็น ' + state.courts + ' สนาม — กด' + drawLabel() + 'อีกครั้ง', 'ok');
+    var cap = courtCapacity();
+    if (state.players.length && cap < state.courts) {
+      setStatus('ตั้งเป็น ' + state.courts + ' สนาม แต่ ' + state.players.length + ' คนแบบ' + fmtLabel() +
+        ' ลงพร้อมกันได้ ' + cap + ' สนาม — ครบ ' + state.courts + ' สนามต้องมี ' +
+        (state.courts * perCourt()) + ' คนขึ้นไป', 'warn');
+    } else {
+      setStatus('ตั้งเป็น ' + state.courts + ' สนาม — กด' + drawLabel() + 'อีกครั้ง', 'ok');
+    }
   });
 
   el.shuffle.addEventListener('click', draw);
@@ -1297,6 +1365,7 @@
   el.shuffle.textContent = drawLabel();
   syncPlanHint();
   syncNames();
+  syncCourtHint();
   if (usingSample) {
     el.nameHint.textContent = 'ตัวอย่าง 8 ชื่อ — ลบแล้วพิมพ์ชื่อก๊วนของคุณทับได้เลย';
   }
