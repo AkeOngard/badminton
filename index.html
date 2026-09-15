@@ -1325,7 +1325,7 @@
       var empty = document.createElement('div');
       empty.className = 'empty';
       empty.textContent = state.players.length
-        ? 'ยังไม่มีผลการจับคู่ — กด “' + drawLabel() + '” ที่แผงด้านซ้าย'
+        ? 'ยังไม่มีผลการจับคู่ — กด “' + drawLabel() + '” ที่แผงควบคุม'
         : 'กรอกรายชื่อผู้เล่นก่อน แล้วกด “' + drawLabel() + '”';
       el.rounds.appendChild(empty);
       return;
@@ -1936,7 +1936,10 @@
     setStatus('กลับมาอีกครั้ง — เว้นไปเกิน 12 ชั่วโมง เริ่มนับสถิติใหม่ · แก้รายชื่อให้ตรงกับคนที่มาวันนี้ แล้วกด' +
       drawLabel(), 'ok');
   } else {
-    draw();
+    // A first visit gets the sample roster so the controls are not an empty
+    // shell, but no draw: nobody has played, so nothing should be tallied yet.
+    render();
+    setStatus('ใส่ชื่อตัวอย่างไว้ให้ 8 คน — แก้เป็นชื่อก๊วนของคุณ แล้วกด' + drawLabel(), 'ok');
   }
 }());
 </script>
