@@ -227,6 +227,19 @@
     :root:not([data-theme="light"]) body::before { opacity: .55; }
   }
 
+  /* A little grain over those blooms. Without it the gradients read as moulded
+     plastic; with it the panes have something with a surface to sit on. It is
+     behind the glass, so the panes blur it the way they blur everything else. */
+  body::after {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)' opacity='.06'/%3E%3C/svg%3E");
+    background-size: 180px 180px;
+  }
+
   /* ---------- the glass ----------
      One recipe for everything that floats above the board. */
   .panel,
@@ -889,44 +902,43 @@
     border-radius: var(--r-sm);
     padding: 9px;
     display: grid;
-    grid-template-columns: 1fr 3px 1fr;
+    grid-template-columns: 1fr 10px 1fr;
     overflow: hidden;
   }
-  /* boundary + long service lines, drawn with the court's own chalk */
-  .plan::before {
-    content: "";
+  /* The chalk, drawn to BWF's dimensions from the template below. */
+  .lines {
     position: absolute;
-    inset: 9px;
-    border: 1.5px solid var(--chalk);
-    border-radius: 3px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
   }
-  .plan::after {
-    content: "";
-    position: absolute;
-    inset: 9px;
-    border-top: 1px solid var(--chalk-soft);
-    border-bottom: 1px solid var(--chalk-soft);
-    border-left: 0;
-    border-right: 0;
-    margin: 13px 0;
-    pointer-events: none;
+  .lines path {
+    fill: none;
+    stroke: var(--chalk);
+    stroke-width: 1.4;
+    /* Four-centimetre lines are sub-pixel at this size, so the weight is held
+       in screen pixels no matter how wide the card gets. */
+    vector-effect: non-scaling-stroke;
   }
-  /* singles sidelines sit inside the doubles box — brighten whichever is in play */
-  .plan[data-fmt="singles"]::after {
-    border-top-color: var(--chalk);
-    border-bottom-color: var(--chalk);
-  }
-  .plan[data-fmt="singles"]::before { border-color: var(--chalk-soft); }
+  /* Whichever pair of sidelines is out of play steps back, and so does the
+     doubles long service line once the singles court is the one being used. */
+  .lines .ln--singles { stroke: var(--chalk-soft); stroke-width: 1; }
+  .plan[data-fmt="singles"] .ln--singles { stroke: var(--chalk); stroke-width: 1.4; }
+  .plan[data-fmt="singles"] .ln--doubles { stroke: var(--chalk-soft); stroke-width: 1; }
 
+  /* Now that the chalk is all there, a net drawn fainter than the lines reads
+     as another dashed line. It gets the brightest thing on the mat: a solid
+     tape down the middle, with the mesh either side of it. */
   .net {
     position: relative;
     background-image:
-      linear-gradient(var(--net), var(--net)),
-      repeating-linear-gradient(0deg, var(--chalk-soft) 0 2px, transparent 2px 5px);
-    background-size: 100% 3px, 100% 100%;
-    background-position: top center, center;
-    background-repeat: no-repeat, repeat-y;
+      linear-gradient(90deg,
+        transparent calc(50% - 1px),
+        var(--net) calc(50% - 1px),
+        var(--net) calc(50% + 1px),
+        transparent calc(50% + 1px)),
+      repeating-linear-gradient(0deg, var(--chalk-soft) 0 2px, transparent 2px 6px);
   }
   .side {
     position: relative;
@@ -1264,10 +1276,29 @@
     <section class="board">
       <p class="status" id="status" role="status"></p>
       <div id="rounds"></div>
-      <p class="footnote">ผังสนามวาดตามสัดส่วนมาตรฐาน BWF 13.40 × 6.10 ม. · เส้นในคือขอบสนามเดี่ยว (กว้าง 5.18 ม.)</p>
+      <p class="footnote">ผังสนามวาดตามสัดส่วนมาตรฐาน BWF 13.40 × 6.10 ม. · เส้นเสิร์ฟสั้น 1.98 ม. จากตาข่าย · เส้นในคือขอบสนามเดี่ยว (กว้าง 5.18 ม.)</p>
     </section>
   </div>
 </div>
+
+<!-- The court, to BWF's dimensions, one unit per centimetre: 13.40 × 6.10 m
+     of court centred in 0.46 m of floor. Every card clones this. -->
+<template id="courtLines">
+  <svg class="lines" viewBox="0 0 1544 702" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
+    <!-- back boundary, both ends -->
+    <path class="ln" d="M102 46 V656 M1442 46 V656" />
+    <!-- doubles sidelines, the outer pair -->
+    <path class="ln ln--doubles" d="M102 46 H1442 M102 656 H1442" />
+    <!-- singles sidelines, 0.46 m inside them -->
+    <path class="ln ln--singles" d="M102 92 H1442 M102 610 H1442" />
+    <!-- short service lines, 1.98 m from the net -->
+    <path class="ln" d="M574 46 V656 M970 46 V656" />
+    <!-- doubles long service lines, 0.76 m inside the back boundary -->
+    <path class="ln ln--doubles" d="M178 46 V656 M1366 46 V656" />
+    <!-- centre lines, splitting each end's pair of service courts -->
+    <path class="ln" d="M102 351 H574 M970 351 H1442" />
+  </svg>
+</template>
 
 <dialog class="modal" id="wipeDlg" aria-labelledby="wipeTitle">
   <h2 class="modal__title" id="wipeTitle">ล้างข้อมูลทั้งหมด?</h2>
@@ -1338,7 +1369,8 @@
     sumCourts: document.getElementById('sumCourts'),
     extrasToggle: document.getElementById('extrasToggle'),
     extrasBody: document.getElementById('extrasBody'),
-    extrasVal: document.getElementById('extrasVal')
+    extrasVal: document.getElementById('extrasVal'),
+    courtTpl: document.getElementById('courtLines')
   };
 
   /* ---------- helpers ---------- */
@@ -1751,6 +1783,10 @@
     var plan = document.createElement('div');
     plan.className = 'plan';
     plan.setAttribute('data-fmt', state.mode);
+    // Behind the net and the names, so both sit on the chalk rather than under it.
+    if (el.courtTpl && el.courtTpl.content) {
+      plan.appendChild(el.courtTpl.content.cloneNode(true));
+    }
 
     match.forEach(function (side, idx) {
       if (idx === 1) {
