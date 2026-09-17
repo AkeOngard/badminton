@@ -70,13 +70,29 @@
     --danger-ink: #FFF4F2;
     --danger-soft: #F6D9D5;
 
+    /* ---- the glass ----
+       A pane is a tint thin enough to read the board through, a bright specular
+       line along its top edge where the light catches, a hairline all round,
+       and a lift off the page. --recess is the opposite: a well pressed into a
+       pane, for tracks and fields. */
+    --glass: rgba(255, 255, 255, .58);
+    --glass-2: rgba(255, 255, 255, .76);
+    --glass-rim: rgba(255, 255, 255, .85);
+    --glass-edge: rgba(14, 40, 33, .09);
+    --glass-lift: 0 10px 30px rgba(14, 40, 33, .13), 0 2px 6px rgba(14, 40, 33, .06);
+    --glass-blur: blur(20px) saturate(180%);
+    --recess: rgba(14, 40, 33, .07);
+    --chip: rgba(255, 255, 255, .55);
+    --chip-edge: rgba(14, 40, 33, .11);
+    --cta-glow: rgba(148, 179, 30, .34);
+
     --font-display: 'Chakra Petch', 'IBM Plex Sans Thai', system-ui, sans-serif;
     --font-body: 'IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
 
-    --r-sm: 10px;
-    --r-md: 14px;
-    --r-lg: 18px;
+    --r-sm: 12px;
+    --r-md: 16px;
+    --r-lg: 24px;
     color-scheme: light;
   }
 
@@ -115,6 +131,17 @@
       --danger: #E4736A;
       --danger-ink: #2A0E0B;
       --danger-soft: #3A1A17;
+
+      --glass: rgba(30, 43, 39, .55);
+      --glass-2: rgba(34, 48, 44, .74);
+      --glass-rim: rgba(255, 255, 255, .18);
+      --glass-edge: rgba(255, 255, 255, .09);
+      --glass-lift: 0 12px 34px rgba(0, 0, 0, .45), 0 2px 8px rgba(0, 0, 0, .3);
+      --glass-blur: blur(22px) saturate(160%);
+      --recess: rgba(0, 0, 0, .28);
+      --chip: rgba(255, 255, 255, .08);
+      --chip-edge: rgba(255, 255, 255, .15);
+      --cta-glow: rgba(174, 214, 36, .24);
       color-scheme: dark;
     }
   }
@@ -153,6 +180,17 @@
     --danger: #E4736A;
     --danger-ink: #2A0E0B;
     --danger-soft: #3A1A17;
+
+    --glass: rgba(30, 43, 39, .55);
+    --glass-2: rgba(34, 48, 44, .74);
+    --glass-rim: rgba(255, 255, 255, .18);
+    --glass-edge: rgba(255, 255, 255, .09);
+    --glass-lift: 0 12px 34px rgba(0, 0, 0, .45), 0 2px 8px rgba(0, 0, 0, .3);
+    --glass-blur: blur(22px) saturate(160%);
+    --recess: rgba(0, 0, 0, .28);
+    --chip: rgba(255, 255, 255, .08);
+    --chip-edge: rgba(255, 255, 255, .15);
+    --cta-glow: rgba(174, 214, 36, .24);
     color-scheme: dark;
   }
 
@@ -168,6 +206,61 @@
     font-size: 15px;
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
+  }
+
+  /* Glass needs something behind it to bend. Three soft blooms in the court
+     colours, fixed to the window, give every pane something to pick up as the
+     board scrolls past. */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: -20%;
+    z-index: -1;
+    pointer-events: none;
+    background:
+      radial-gradient(42% 32% at 14% 10%, rgba(20, 88, 74, .18), transparent 70%),
+      radial-gradient(38% 30% at 88% 4%, rgba(29, 78, 124, .15), transparent 70%),
+      radial-gradient(46% 34% at 62% 96%, rgba(190, 226, 70, .18), transparent 70%);
+  }
+  :root[data-theme="dark"] body::before { opacity: .55; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) body::before { opacity: .55; }
+  }
+
+  /* ---------- the glass ----------
+     One recipe for everything that floats above the board. */
+  .panel,
+  .court,
+  .empty,
+  .modal {
+    background: var(--glass);
+    -webkit-backdrop-filter: var(--glass-blur);
+    backdrop-filter: var(--glass-blur);
+    border: 0;
+    box-shadow:
+      inset 0 1px 0 var(--glass-rim),
+      inset 0 0 0 1px var(--glass-edge),
+      var(--glass-lift);
+  }
+  /* The small controls take the same light without blurring: a pane inside a
+     pane only turns both of them milky. */
+  .icon-btn,
+  .mini-btn,
+  .btn--ghost,
+  .btn--install {
+    background: var(--chip);
+    border: 0;
+    box-shadow:
+      inset 0 1px 0 var(--glass-rim),
+      inset 0 0 0 1px var(--chip-edge);
+  }
+  /* Where the browser cannot blur, the panes go solid rather than washing the
+     text out over whatever happens to be behind them. */
+  @supports not ((-webkit-backdrop-filter: blur(1px)) or (backdrop-filter: blur(1px))) {
+    :root {
+      --glass: var(--surface);
+      --glass-2: var(--surface-2);
+    }
   }
 
   .app {
@@ -216,13 +309,11 @@
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    background: transparent;
-    border: 1px solid var(--line);
     border-radius: 100px;
     color: var(--ink-2);
     cursor: pointer;
   }
-  .icon-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+  .icon-btn:hover { color: var(--ink); background: var(--glass-2); }
   .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
   .icon-btn svg { width: 18px; height: 18px; }
 
@@ -258,8 +349,6 @@
     display: flex;
     flex-direction: column;
     gap: 14px;
-    background: var(--surface);
-    border: 1px solid var(--line);
     border-radius: var(--r-lg);
     padding: 18px;
   }
@@ -389,10 +478,11 @@
     font-size: 14.5px;
     line-height: 1.7;
     color: var(--ink);
-    background: var(--surface-2);
-    border: 1px solid var(--line);
+    background: var(--recess);
+    border: 0;
+    box-shadow: inset 0 1px 2px var(--recess);
     border-radius: var(--r-md);
-    padding: 11px 12px;
+    padding: 12px 13px;
     min-height: 150px;
     resize: vertical;
     width: 100%;
@@ -414,9 +504,9 @@
     grid-auto-columns: 1fr;
     gap: 4px;
     padding: 4px;
-    background: var(--surface-2);
-    border: 1px solid var(--line);
+    background: var(--recess);
     border-radius: var(--r-md);
+    box-shadow: inset 0 1px 2px var(--recess);
   }
   .segment button {
     font-family: var(--font-body);
@@ -436,9 +526,17 @@
     background: var(--accent);
     color: var(--accent-ink);
     font-weight: 600;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .22),
+      0 2px 8px rgba(0, 0, 0, .18);
   }
 
-  .actions { display: flex; flex-direction: column; gap: 9px; }
+  .actions {
+    display: flex;
+    flex-direction: column;
+    gap: 9px;
+    padding: 0 2px;
+  }
   .btn {
     font-family: var(--font-display);
     font-size: 16px;
@@ -459,28 +557,26 @@
      otherwise let go before the 150ms fade had got anywhere. */
   .btn.is-press { transition-duration: 0s; }
   .btn--primary:active, .btn--primary.is-press { background: var(--cta-press); }
-  .btn--ghost:active, .btn--ghost.is-press {
-    background: var(--surface-2);
-    border-color: var(--ink-3);
-  }
-  .icon-btn.is-press, .mini-btn.is-press {
-    background: var(--surface-2);
-    border-color: var(--ink-3);
-  }
+  .btn--ghost:active, .btn--ghost.is-press { background: var(--glass-2); }
+  .icon-btn.is-press, .mini-btn.is-press { background: var(--glass-2); }
   /* The one loud thing on the page. */
   .btn--primary {
     background: var(--cta);
     color: var(--cta-ink);
     font-weight: 700;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .5),
+      inset 0 0 0 1px rgba(11, 58, 47, .1),
+      0 8px 22px var(--cta-glow);
   }
-  .btn--primary:hover { filter: brightness(1.05); }
+  .btn--primary:hover { filter: brightness(1.04); }
   .btn--ghost {
     background: transparent;
     color: var(--ink-2);
     border-color: var(--line);
     font-size: 14px;
   }
-  .btn--ghost:hover { color: var(--ink); border-color: var(--ink-3); }
+  .btn--ghost:hover { color: var(--ink); background: var(--glass-2); }
   .btn__icon { display: none; }
 
   /* Only ever on screen when the browser says the app can be installed. */
@@ -492,15 +588,13 @@
     height: 44px;
     padding: 0 15px;
     border-radius: 100px;
-    background: transparent;
-    border-color: var(--line);
     color: var(--accent);
     font-family: var(--font-body);
     font-size: 13.5px;
     font-weight: 500;
   }
   .btn--install svg { width: 15px; height: 15px; }
-  .btn--install:hover { border-color: var(--accent); }
+  .btn--install:hover { background: var(--glass-2); }
 
   /* On a phone the draw button rides at the bottom of the screen, within a
      thumb's reach, whether the settings are folded away or open. */
@@ -509,39 +603,55 @@
     .app {
       padding-top: calc(18px + env(safe-area-inset-top, 0px));
       padding-right: max(16px, env(safe-area-inset-right, 0px));
-      padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+      padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
       padding-left: max(16px, env(safe-area-inset-left, 0px));
     }
+    /* A capsule floating clear of all four edges, with the board sliding
+       under it. iOS already keeps the home indicator's strip clear, so the
+       offsets take the larger of ours and the inset rather than stacking. */
     .actions {
       position: fixed;
-      left: 0;
-      right: 0;
-      bottom: 0;
+      left: max(16px, env(safe-area-inset-left, 0px));
+      right: max(16px, env(safe-area-inset-right, 0px));
+      bottom: max(14px, env(safe-area-inset-bottom, 0px));
       z-index: 20;
       flex-direction: row;
       align-items: center;
-      gap: 10px;
-      padding-top: 8px;
-      /* iOS already keeps the home indicator's strip clear, so take the larger
-         of the two rather than stacking ours on top of it — added, it made the
-         bar a finger's width taller than it had any reason to be. */
-      padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
-      padding-right: max(16px, env(safe-area-inset-right, 0px));
-      padding-left: max(16px, env(safe-area-inset-left, 0px));
-      background: var(--bg);
-      border-top: 1px solid var(--line);
+      gap: 8px;
+      padding: 7px;
+      border-radius: 29px;
+      background: var(--glass-2);
+      -webkit-backdrop-filter: var(--glass-blur);
+      backdrop-filter: var(--glass-blur);
+      box-shadow:
+        inset 0 1px 0 var(--glass-rim),
+        inset 0 0 0 1px var(--glass-edge),
+        0 14px 36px rgba(14, 40, 33, .18),
+        0 3px 10px rgba(14, 40, 33, .1);
     }
     /* One height for both, so the row reads as a single piece and the small
        button is still something a thumb can land on. */
     .actions .btn {
-      height: 50px;
+      height: 48px;
       padding: 0 16px;
+      border-radius: 22px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
     }
     .actions .btn--primary { flex: 1 1 auto; }
-    .actions .btn--hold { flex: none; width: 58px; padding: 0; }
+    .actions .btn--hold {
+      flex: none;
+      width: 48px;
+      padding: 0;
+      border-radius: 50%;
+    }
+    /* Inside the capsule it is a well, not another pane. */
+    .actions .btn--ghost {
+      background: var(--recess);
+      box-shadow: none;
+    }
+    .actions .btn--ghost.is-press { background: var(--chip); }
     .actions .hint { display: none; }
     .btn__icon { display: block; width: 20px; height: 20px; position: relative; }
     /* The label stays for a screen reader; the icon carries it for everyone else. */
@@ -576,7 +686,7 @@
   .stat-list .bar {
     height: 6px;
     border-radius: 100px;
-    background: var(--surface-2);
+    background: var(--recess);
     overflow: hidden;
   }
   .stat-list .bar i { display: block; height: 100%; background: var(--accent); }
@@ -606,10 +716,11 @@
     text-align: right;
     font-variant-numeric: tabular-nums;
     color: var(--ink);
-    background: var(--surface-2);
-    border: 1px solid var(--line);
+    background: var(--recess);
+    border: 0;
+    box-shadow: inset 0 1px 2px var(--recess);
     border-radius: var(--r-sm);
-    padding: 6px 8px;
+    padding: 7px 9px;
     width: 100%;
     appearance: textfield;
     -moz-appearance: textfield;
@@ -623,9 +734,12 @@
     flex-direction: column;
     gap: 3px;
     margin-top: 3px;
-    padding: 13px 15px;
+    padding: 14px 16px;
     background: var(--mat-1);
     border-radius: var(--r-md);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .16),
+      0 6px 18px rgba(14, 40, 33, .18);
   }
   .fee__each {
     font-family: var(--font-display);
@@ -677,14 +791,12 @@
     font-family: var(--font-body);
     font-size: 13px;
     color: var(--accent);
-    background: transparent;
-    border: 1px solid var(--line);
     border-radius: 100px;
     padding: 0 14px;
     min-height: 40px;
     cursor: pointer;
   }
-  .mini-btn:hover { border-color: var(--accent); }
+  .mini-btn:hover { color: var(--ink); background: var(--glass-2); }
   .mini-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .courts {
@@ -701,9 +813,7 @@
     flex-direction: column;
     gap: 9px;
     max-width: 540px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: var(--r-md);
+    border-radius: calc(var(--r-sm) + 9px);
     padding: 10px 10px 12px;
   }
   .court[data-court="2"] { --mat: var(--mat-2); }
@@ -794,6 +904,11 @@
     padding: 8px 12px;
     min-width: 0;
   }
+  .side .name {
+    -webkit-backdrop-filter: blur(6px) saturate(140%);
+    backdrop-filter: blur(6px) saturate(140%);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
+  }
   .name {
     display: block;
     max-width: 100%;
@@ -871,8 +986,6 @@
     padding: 30px 24px;
     text-align: center;
     color: var(--ink-2);
-    background: var(--surface);
-    border: 1px solid var(--line);
     border-radius: var(--r-lg);
     line-height: 1.7;
   }
@@ -918,14 +1031,16 @@
   .modal {
     max-width: 380px;
     width: calc(100% - 32px);
-    padding: 20px;
-    border: 1px solid var(--line);
+    padding: 22px;
     border-radius: var(--r-lg);
-    background: var(--surface);
     color: var(--ink);
     font-family: var(--font-body);
   }
-  .modal::backdrop { background: rgba(8, 16, 14, .55); }
+  .modal::backdrop {
+    background: rgba(8, 16, 14, .4);
+    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(8px);
+  }
   .modal__title {
     margin: 0 0 8px;
     font-family: var(--font-display);
@@ -1046,20 +1161,24 @@
           </div>
         </div>
 
-        <div class="actions">
-          <button type="button" class="btn btn--primary" id="shuffle">สุ่มจับคู่</button>
-          <button type="button" class="btn btn--ghost btn--hold" id="reset"
-                  title="แตะเพื่อล้างผลจับคู่และสถิติ · กดค้าง 1 วินาทีเพื่อล้างทุกอย่าง">
-            <span class="btn__hold" aria-hidden="true"></span>
-            <svg class="btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-              <path d="M4 12 a8 8 0 1 0 2.6 -5.9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" />
-              <path d="M4 4 V9 H9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
-            </svg>
-            <span class="btn__label">รีเซ็ตการจับคู่และสถิติ</span>
-          </button>
-          <p class="hint">กดปุ่มรีเซ็ตค้างไว้ 1 วินาที เพื่อล้างข้อมูลทั้งหมดรวมรายชื่อ</p>
-        </div>
       </aside>
+
+      <!-- Outside the pane on purpose: a backdrop-filter makes its element the
+           containing block for any fixed descendant, which would pin this bar
+           to the panel instead of the screen. -->
+      <div class="actions">
+        <button type="button" class="btn btn--primary" id="shuffle">สุ่มจับคู่</button>
+        <button type="button" class="btn btn--ghost btn--hold" id="reset"
+                title="แตะเพื่อล้างผลจับคู่และสถิติ · กดค้าง 1 วินาทีเพื่อล้างทุกอย่าง">
+          <span class="btn__hold" aria-hidden="true"></span>
+          <svg class="btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M4 12 a8 8 0 1 0 2.6 -5.9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" />
+            <path d="M4 4 V9 H9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+          <span class="btn__label">รีเซ็ตการจับคู่และสถิติ</span>
+        </button>
+        <p class="hint">กดปุ่มรีเซ็ตค้างไว้ 1 วินาที เพื่อล้างข้อมูลทั้งหมดรวมรายชื่อ</p>
+      </div>
 
       <aside class="panel panel--extras">
         <button type="button" class="disclose" id="extrasToggle" aria-expanded="false" aria-controls="extrasBody">
