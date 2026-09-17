@@ -13,35 +13,56 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="สุ่มคู่ลงสนาม">
 <meta name="application-name" content="สุ่มคู่ลงสนาม">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#EDF1EB">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0C1311">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F1F3EC">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0D1513">
+
+<!-- The saved choice has to land on <html> before the first paint, or a phone
+     set to dark flashes the light board on every launch. -->
+<script>
+  try {
+    var t = localStorage.getItem('badminton-theme');
+    if (t === 'light' || t === 'dark') document.documentElement.setAttribute('data-theme', t);
+  } catch (e) { /* private window — the system setting decides, as it does by default */ }
+</script>
+
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap">
 
 <style>
   :root {
-    --bg: #EDF1EB;
-    --bg-grad: #E3E9E0;
+    --bg: #F1F3EC;
+    --bg-grad: #E9EDE4;
     --surface: #FFFFFF;
-    --surface-2: #E6EBE3;
-    --ink: #14201C;
-    --ink-2: #4D5B55;
-    --ink-3: #78857F;
-    --line: #CED8CE;
-    --line-soft: #DEE5DC;
-    --mat-1: #14554A;
-    --mat-2: #17486E;
+    --surface-2: #EDF1E9;
+    --ink: #0F1A16;
+    --ink-2: #4E5B55;
+    --ink-3: #5F6C66;
+    --line: #E2E7DD;
+    --line-soft: #EDF1E9;
+    --mat-1: #14584A;
+    --mat-2: #1D4E7C;
     --mat-3: #6B2B40;
     --mat-4: #3B3B74;
     --court-ink: #F4F9F3;
-    --accent: #13544A;
+    /* The chalk on the mat. Dark mode dims both, so a phone in a gym at night
+       is not two bright white rectangles. */
+    --chalk: rgba(244, 249, 243, .62);
+    --chalk-soft: rgba(244, 249, 243, .26);
+    --net: rgba(244, 249, 243, .9);
+    --name-fill: rgba(5, 28, 23, .4);
+    --name-line: rgba(244, 249, 243, .36);
+    --accent: #0E5142;
     --accent-ink: #F4F9F3;
-    --accent-soft: #DCE9E2;
-    --accent-line: #9EC3B6;
-    --rest: #93681B;
-    --rest-soft: #F2E7CE;
-    --danger: #A3231B;
+    --accent-soft: #E7EFE6;
+    --accent-line: #BFD3C6;
+    /* One lime, one place: the draw button. It stays the same in both modes so
+       the thumb knows where to go without reading anything. */
+    --cta: #D9F25C;
+    --cta-ink: #0B3A2F;
+    --rest: #7A5510;
+    --rest-soft: #F4E9D2;
+    --danger: #B3261E;
     --danger-ink: #FFF4F2;
     --danger-soft: #F6D9D5;
 
@@ -49,34 +70,43 @@
     --font-body: 'IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
 
-    --r-sm: 4px;
-    --r-md: 8px;
-    --r-lg: 14px;
+    --r-sm: 10px;
+    --r-md: 14px;
+    --r-lg: 18px;
     color-scheme: light;
   }
 
   @media (prefers-color-scheme: dark) {
     :root:not([data-theme="light"]) {
-      --bg: #0C1311;
-      --bg-grad: #101917;
-      --surface: #141E1B;
-      --surface-2: #1B2723;
-      --ink: #E7EEE8;
-      --ink-2: #9BABA4;
-      --ink-3: #76867F;
+      --bg: #0D1513;
+      --bg-grad: #101A17;
+      --surface: #16221F;
+      --surface-2: #1D2A26;
+      --ink: #E9F0EA;
+      --ink-2: #AFBCB5;
+      --ink-3: #8C9992;
       --line: #26332E;
-      --line-soft: #1F2C28;
-      --mat-1: #11473E;
-      --mat-2: #133D5D;
+      --line-soft: #202D28;
+      --mat-1: #12463C;
+      --mat-2: #173D5C;
       --mat-3: #5A2134;
       --mat-4: #2F3060;
-      --court-ink: #EFF6EE;
-      --accent: #3E9C87;
-      --accent-ink: #07201B;
+      --court-ink: #F4F9F3;
+      --chalk: rgba(244, 249, 243, .5);
+      --chalk-soft: rgba(244, 249, 243, .2);
+      --net: rgba(244, 249, 243, .78);
+      --name-fill: rgba(0, 0, 0, .34);
+      --name-line: rgba(244, 249, 243, .3);
+      /* A green this deep would sink into the dark ground, so the selected
+         segment and the links lift to a green that still reads as the same one. */
+      --accent: #2E7A68;
+      --accent-ink: #F4F9F3;
       --accent-soft: #16332C;
       --accent-line: #2F6355;
-      --rest: #D7A549;
-      --rest-soft: #2C2516;
+      --cta: #D9F25C;
+      --cta-ink: #0B3A2F;
+      --rest: #E3BC69;
+      --rest-soft: #2E2718;
       --danger: #E4736A;
       --danger-ink: #2A0E0B;
       --danger-soft: #3A1A17;
@@ -85,26 +115,35 @@
   }
 
   :root[data-theme="dark"] {
-    --bg: #0C1311;
-    --bg-grad: #101917;
-    --surface: #141E1B;
-    --surface-2: #1B2723;
-    --ink: #E7EEE8;
-    --ink-2: #9BABA4;
-    --ink-3: #76867F;
+    --bg: #0D1513;
+    --bg-grad: #101A17;
+    --surface: #16221F;
+    --surface-2: #1D2A26;
+    --ink: #E9F0EA;
+    --ink-2: #AFBCB5;
+    --ink-3: #8C9992;
     --line: #26332E;
-    --line-soft: #1F2C28;
-    --mat-1: #11473E;
-    --mat-2: #133D5D;
+    --line-soft: #202D28;
+    --mat-1: #12463C;
+    --mat-2: #173D5C;
     --mat-3: #5A2134;
     --mat-4: #2F3060;
-    --court-ink: #EFF6EE;
-    --accent: #3E9C87;
-    --accent-ink: #07201B;
+    --court-ink: #F4F9F3;
+    --chalk: rgba(244, 249, 243, .5);
+    --chalk-soft: rgba(244, 249, 243, .2);
+    --net: rgba(244, 249, 243, .78);
+    --name-fill: rgba(0, 0, 0, .34);
+    --name-line: rgba(244, 249, 243, .3);
+    /* A green this deep would sink into the dark ground, so the selected
+       segment and the links lift to a green that still reads as the same one. */
+    --accent: #2E7A68;
+    --accent-ink: #F4F9F3;
     --accent-soft: #16332C;
     --accent-line: #2F6355;
-    --rest: #D7A549;
-    --rest-soft: #2C2516;
+    --cta: #D9F25C;
+    --cta-ink: #0B3A2F;
+    --rest: #E3BC69;
+    --rest-soft: #2E2718;
     --danger: #E4736A;
     --danger-ink: #2A0E0B;
     --danger-soft: #3A1A17;
@@ -134,63 +173,91 @@
   /* ---------- masthead ---------- */
   .masthead {
     display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    padding-bottom: 20px;
-    border-bottom: 1px solid var(--line);
-    margin-bottom: 26px;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 18px;
   }
-  .mark { flex: none; width: 46px; height: 46px; margin-top: 4px; }
-  .eyebrow {
-    margin: 0 0 2px;
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: .14em;
-    text-transform: uppercase;
-    color: var(--ink-3);
-  }
+  .mark { flex: none; width: 30px; height: 30px; }
   h1 {
     margin: 0;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(28px, 4.4vw, 40px);
-    line-height: 1.1;
-    letter-spacing: -0.01em;
-    text-wrap: balance;
+    font-size: clamp(20px, 2.6vw, 24px);
+    line-height: 1.2;
+    letter-spacing: .005em;
   }
-  .lede {
-    margin: 8px 0 0;
-    max-width: 54ch;
+  .eyebrow {
+    margin: 0;
+    font-size: 13px;
+    color: var(--ink-3);
+  }
+  /* The strapline is the first thing to go when the row gets tight. */
+  @media (max-width: 760px) { .eyebrow { display: none; } }
+
+  .topbar {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .icon-btn {
+    flex: none;
+    width: 44px;
+    height: 44px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    border: 1px solid var(--line);
+    border-radius: 100px;
     color: var(--ink-2);
+    cursor: pointer;
+  }
+  .icon-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .icon-btn svg { width: 18px; height: 18px; }
+
+  /* Which half of the toggle to show: the mode you would switch TO. */
+  .theme-sun { display: none; }
+  :root[data-theme="dark"] .theme-sun { display: block; }
+  :root[data-theme="dark"] .theme-moon { display: none; }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) .theme-sun { display: block; }
+    :root:not([data-theme="light"]) .theme-moon { display: none; }
   }
 
   /* ---------- layout ---------- */
   .layout {
     display: grid;
-    grid-template-columns: minmax(268px, 330px) minmax(0, 1fr);
+    grid-template-columns: minmax(268px, 340px) minmax(0, 1fr);
     gap: 26px;
     align-items: start;
   }
   @media (max-width: 880px) {
-    .layout { grid-template-columns: minmax(0, 1fr); }
+    .layout { grid-template-columns: minmax(0, 1fr); gap: 18px; }
   }
 
   /* ---------- control panel ---------- */
   .rail {
     display: flex;
     flex-direction: column;
-    gap: 22px;
+    gap: 14px;
     position: sticky;
     top: 20px;
   }
   .panel {
     display: flex;
     flex-direction: column;
-    gap: 22px;
-    padding: 20px;
+    gap: 14px;
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
+    padding: 18px;
+  }
+  .panel__body {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
   }
   @media (max-width: 880px) {
     /* On a phone the draw is what you opened the app for, so it goes above the
@@ -200,7 +267,87 @@
     .panel--controls { order: 1; }
     .board { order: 2; }
     .panel--extras { order: 3; }
+    /* Collapsed, the settings card is one line: it should not look like a box
+       with a line rattling around inside it. */
+    .panel { padding: 6px; }
+    .panel__body { padding: 8px 12px 12px; }
   }
+
+  /* The whole control panel, folded into one line on a phone. */
+  .setupbar {
+    display: none;
+    width: 100%;
+    align-items: center;
+    gap: 9px;
+    padding: 12px 12px;
+    background: transparent;
+    border: 0;
+    border-radius: var(--r-md);
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink-2);
+    text-align: left;
+    cursor: pointer;
+  }
+  @media (max-width: 880px) { .setupbar { display: flex; } }
+  /* Wide screens have no fold, so the panel is open before the script runs. */
+  @media (min-width: 881px) {
+    #setupBody[hidden] { display: flex !important; }
+  }
+  .setupbar b {
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .setupbar i {
+    flex: none;
+    width: 3px;
+    height: 3px;
+    border-radius: 50%;
+    background: var(--line);
+  }
+  .setupbar__edit {
+    margin-left: auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    color: var(--accent);
+  }
+  .setupbar:focus-visible, .disclose:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+  }
+  .chev { transition: transform .18s ease; }
+  [aria-expanded="true"] .chev { transform: rotate(90deg); }
+
+  /* The money and the tallies: a row you open when you want them. */
+  .disclose {
+    display: flex;
+    width: 100%;
+    align-items: center;
+    gap: 10px;
+    padding: 12px;
+    background: transparent;
+    border: 0;
+    border-radius: var(--r-md);
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+    text-align: left;
+    cursor: pointer;
+  }
+  .disclose__val {
+    margin-left: auto;
+    font-family: var(--font-display);
+    font-size: 14.5px;
+    font-weight: 700;
+    color: var(--accent);
+  }
+  .disclose__val:empty { display: none; }
+
   .field { display: flex; flex-direction: column; gap: 9px; }
   .field__label {
     display: flex;
@@ -209,11 +356,18 @@
     gap: 10px;
   }
   .label {
-    font-family: var(--font-mono);
-    font-size: 11px;
-    letter-spacing: .12em;
-    text-transform: uppercase;
-    color: var(--ink-3);
+    font-size: 13.5px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  /* Kept for a screen reader where the eye reads the value off a header. */
+  .sr {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
   }
   .count {
     font-family: var(--font-mono);
@@ -230,7 +384,7 @@
     border: 1px solid var(--line);
     border-radius: var(--r-md);
     padding: 11px 12px;
-    min-height: 188px;
+    min-height: 150px;
     resize: vertical;
     width: 100%;
   }
@@ -280,15 +434,20 @@
     font-size: 16px;
     font-weight: 600;
     letter-spacing: .01em;
-    padding: 12px 16px;
+    padding: 13px 16px;
     border-radius: var(--r-md);
     border: 1px solid transparent;
     cursor: pointer;
     transition: transform .12s ease, background .15s ease, border-color .15s ease;
   }
   .btn:active { transform: translateY(1px); }
-  .btn--primary { background: var(--accent); color: var(--accent-ink); }
-  .btn--primary:hover { filter: brightness(1.08); }
+  /* The one loud thing on the page. */
+  .btn--primary {
+    background: var(--cta);
+    color: var(--cta-ink);
+    font-weight: 700;
+  }
+  .btn--primary:hover { filter: brightness(1.05); }
   .btn--ghost {
     background: transparent;
     color: var(--ink-2);
@@ -296,17 +455,66 @@
     font-size: 14px;
   }
   .btn--ghost:hover { color: var(--ink); border-color: var(--ink-3); }
+  .btn__icon { display: none; }
 
   /* Only ever on screen when the browser says the app can be installed. */
   [hidden] { display: none !important; }
   .btn--install {
-    margin-top: 2px;
-    font-size: 14px;
-    background: var(--accent-soft);
-    border-color: var(--accent-line);
-    color: var(--ink);
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    height: 44px;
+    padding: 0 15px;
+    border-radius: 100px;
+    background: transparent;
+    border-color: var(--line);
+    color: var(--accent);
+    font-family: var(--font-body);
+    font-size: 13.5px;
+    font-weight: 500;
   }
+  .btn--install svg { width: 15px; height: 15px; }
   .btn--install:hover { border-color: var(--accent); }
+
+  /* On a phone the draw button rides at the bottom of the screen, within a
+     thumb's reach, whether the settings are folded away or open. */
+  @media (max-width: 880px) {
+    /* Room under the last card for the bar that now floats over it. */
+    .app { padding: 18px 16px 104px; }
+    .actions {
+      position: fixed;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      z-index: 20;
+      flex-direction: row;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 16px calc(10px + env(safe-area-inset-bottom, 0px));
+      background: var(--bg);
+      border-top: 1px solid var(--line);
+    }
+    .actions .btn--primary { flex: 1 1 auto; font-size: 17px; }
+    .actions .hint { display: none; }
+    .btn--hold {
+      flex: none;
+      width: 56px;
+      padding: 0;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .btn__icon { display: block; width: 20px; height: 20px; position: relative; }
+    /* The label stays for a screen reader; the icon carries it for everyone else. */
+    .btn--hold .btn__label {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      overflow: hidden;
+      clip-path: inset(50%);
+      white-space: nowrap;
+    }
+  }
 
   .stat-list {
     list-style: none;
@@ -318,13 +526,21 @@
   }
   .stat-list li {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto auto;
+    grid-template-columns: minmax(0, 1fr) minmax(34px, 1.1fr) auto auto;
     gap: 10px;
-    align-items: baseline;
-    padding: 5px 0;
+    align-items: center;
+    padding: 7px 0;
     border-bottom: 1px solid var(--line-soft);
     font-size: 14px;
   }
+  .stat-list li.stat-list__empty { grid-template-columns: 1fr; color: var(--ink-3); }
+  .stat-list .bar {
+    height: 6px;
+    border-radius: 100px;
+    background: var(--surface-2);
+    overflow: hidden;
+  }
+  .stat-list .bar i { display: block; height: 100%; background: var(--accent); }
   .stat-list li:last-child { border-bottom: 0; }
   .stat-list .nm { overflow-wrap: anywhere; }
   .stat-list .v {
@@ -366,63 +582,37 @@
   .fee__out {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 3px;
     margin-top: 3px;
-    padding: 10px 12px;
-    background: var(--accent-soft);
-    border: 1px solid var(--accent-line);
+    padding: 13px 15px;
+    background: var(--mat-1);
     border-radius: var(--r-md);
   }
   .fee__each {
     font-family: var(--font-display);
-    font-size: 19px;
-    font-weight: 600;
+    font-size: 21px;
+    font-weight: 700;
     line-height: 1.25;
-    color: var(--ink);
+    color: var(--cta);
     font-variant-numeric: tabular-nums;
   }
   .fee__note {
     font-size: 12px;
-    line-height: 1.5;
-    color: var(--ink-2);
+    line-height: 1.55;
+    color: var(--court-ink);
+    opacity: .82;
     font-variant-numeric: tabular-nums;
   }
 
   /* ---------- board ---------- */
-  .board { display: flex; flex-direction: column; gap: 20px; min-width: 0; }
-  .summary {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px 10px;
-    align-items: center;
-  }
-  .pill {
-    display: inline-flex;
-    gap: 7px;
-    align-items: baseline;
-    padding: 5px 11px;
-    background: var(--surface);
-    border: 1px solid var(--line);
-    border-radius: 100px;
-    font-size: 13px;
-    color: var(--ink-2);
-  }
-  .pill b {
-    font-family: var(--font-mono);
-    font-weight: 500;
-    font-variant-numeric: tabular-nums;
-    color: var(--ink);
-  }
-  .pill--accent {
-    background: var(--accent-soft);
-    border-color: var(--accent-line);
-  }
+  .board { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
   .status {
     margin: 0;
     font-size: 13.5px;
+    line-height: 1.6;
     color: var(--ink-2);
-    min-height: 1.4em;
   }
+  .status:empty { display: none; }
   .status[data-kind="warn"] { color: var(--rest); }
 
   .round { display: flex; flex-direction: column; gap: 11px; }
@@ -430,37 +620,37 @@
     display: flex;
     align-items: center;
     gap: 12px;
-    padding-bottom: 7px;
-    border-bottom: 1px solid var(--line);
   }
   .round__no {
     font-family: var(--font-display);
-    font-size: 19px;
-    font-weight: 600;
+    font-size: 17px;
+    font-weight: 700;
     margin: 0;
   }
   .round__meta {
     font-family: var(--font-mono);
     font-size: 11.5px;
+    letter-spacing: .06em;
     color: var(--ink-3);
     margin-right: auto;
   }
   .mini-btn {
     font-family: var(--font-body);
-    font-size: 12.5px;
-    color: var(--ink-2);
+    font-size: 13px;
+    color: var(--accent);
     background: transparent;
     border: 1px solid var(--line);
     border-radius: 100px;
-    padding: 4px 11px;
+    padding: 0 14px;
+    min-height: 40px;
     cursor: pointer;
   }
-  .mini-btn:hover { color: var(--ink); border-color: var(--ink-3); }
+  .mini-btn:hover { border-color: var(--accent); }
   .mini-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
   .courts {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(286px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(288px, 1fr));
     gap: 14px;
   }
 
@@ -470,8 +660,12 @@
     --mat: var(--mat-1);
     display: flex;
     flex-direction: column;
-    gap: 8px;
-    max-width: 520px;
+    gap: 9px;
+    max-width: 540px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-radius: var(--r-md);
+    padding: 10px 10px 12px;
   }
   .court[data-court="2"] { --mat: var(--mat-2); }
   .court[data-court="3"] { --mat: var(--mat-3); }
@@ -481,24 +675,25 @@
     display: flex;
     align-items: center;
     gap: 8px;
+    padding: 2px 4px 0;
   }
   .court__dot {
     flex: none;
     width: 9px;
     height: 9px;
-    border-radius: 2px;
+    border-radius: 3px;
     background: var(--mat);
   }
   .court__no {
     font-family: var(--font-display);
-    font-size: 14px;
+    font-size: 15px;
     font-weight: 600;
     color: var(--ink);
   }
   .court__fmt {
     font-family: var(--font-mono);
     font-size: 11px;
-    letter-spacing: .08em;
+    letter-spacing: .12em;
     color: var(--ink-3);
     margin-left: auto;
   }
@@ -507,7 +702,6 @@
     aspect-ratio: 2.2 / 1;
     min-height: 132px;
     background: var(--mat);
-    background-image: linear-gradient(105deg, rgba(255,255,255,.07), rgba(0,0,0,.14));
     border-radius: var(--r-sm);
     padding: 9px;
     display: grid;
@@ -519,16 +713,16 @@
     content: "";
     position: absolute;
     inset: 9px;
-    border: 1.5px solid rgba(244,249,243,.72);
-    border-radius: 2px;
+    border: 1.5px solid var(--chalk);
+    border-radius: 3px;
     pointer-events: none;
   }
   .plan::after {
     content: "";
     position: absolute;
     inset: 9px;
-    border-top: 1px solid rgba(244,249,243,.26);
-    border-bottom: 1px solid rgba(244,249,243,.26);
+    border-top: 1px solid var(--chalk-soft);
+    border-bottom: 1px solid var(--chalk-soft);
     border-left: 0;
     border-right: 0;
     margin: 13px 0;
@@ -536,16 +730,16 @@
   }
   /* singles sidelines sit inside the doubles box — brighten whichever is in play */
   .plan[data-fmt="singles"]::after {
-    border-top-color: rgba(244,249,243,.72);
-    border-bottom-color: rgba(244,249,243,.72);
+    border-top-color: var(--chalk);
+    border-bottom-color: var(--chalk);
   }
-  .plan[data-fmt="singles"]::before { border-color: rgba(244,249,243,.3); }
+  .plan[data-fmt="singles"]::before { border-color: var(--chalk-soft); }
 
   .net {
     position: relative;
     background-image:
-      linear-gradient(rgba(244,249,243,.9), rgba(244,249,243,.9)),
-      repeating-linear-gradient(0deg, rgba(244,249,243,.55) 0 2px, transparent 2px 5px);
+      linear-gradient(var(--net), var(--net)),
+      repeating-linear-gradient(0deg, var(--chalk-soft) 0 2px, transparent 2px 5px);
     background-size: 100% 3px, 100% 100%;
     background-position: top center, center;
     background-repeat: no-repeat, repeat-y;
@@ -557,31 +751,23 @@
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    gap: 6px;
-    padding: 6px 10px;
+    gap: 7px;
+    padding: 8px 12px;
     min-width: 0;
   }
   .name {
     display: block;
     max-width: 100%;
-    padding: 5px 11px;
-    background: rgba(0, 0, 0, .28);
-    border: 1px solid rgba(244,249,243,.42);
+    padding: 6px 12px;
+    background: var(--name-fill);
+    border: 1px solid var(--name-line);
     border-radius: 100px;
     color: var(--court-ink);
-    font-size: 14px;
+    font-size: 14.5px;
     font-weight: 500;
     line-height: 1.35;
     text-align: center;
     overflow-wrap: anywhere;
-  }
-  .side__tag {
-    position: absolute;
-    top: 2px;
-    font-family: var(--font-mono);
-    font-size: 10px;
-    letter-spacing: .1em;
-    color: rgba(244,249,243,.5);
   }
 
   /* ---------- dealing a fresh draw ---------- */
@@ -606,24 +792,21 @@
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    gap: 8px;
-    padding: 12px 14px;
-    background: var(--rest-soft);
-    border: 1px dashed var(--rest);
-    border-radius: var(--r-md);
+    gap: 7px;
   }
   .rest__label {
     font-family: var(--font-mono);
     font-size: 11px;
     letter-spacing: .1em;
-    text-transform: uppercase;
-    color: var(--rest);
+    color: var(--ink-3);
     margin-right: 2px;
   }
   .rest .name {
-    background: transparent;
-    border-color: var(--rest);
-    color: var(--ink);
+    background: var(--rest-soft);
+    border-color: transparent;
+    color: var(--rest);
+    font-size: 13.5px;
+    padding: 5px 12px;
   }
 
   .waiting {
@@ -643,12 +826,22 @@
   }
 
   .empty {
-    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 7px;
+    padding: 30px 24px;
     text-align: center;
     color: var(--ink-2);
     background: var(--surface);
-    border: 1px dashed var(--line);
+    border: 1px solid var(--line);
     border-radius: var(--r-lg);
+    line-height: 1.7;
+  }
+  .empty b {
+    font-family: var(--font-display);
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--ink);
   }
 
   .footnote {
@@ -720,110 +913,156 @@
     <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
       <g fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path d="M10.5 10.5 L17.5 32.5 M37.5 10.5 L30.5 32.5 M10.5 10.5 Q24 3.5 37.5 10.5"
-              stroke="var(--ink-2)" stroke-width="1.6" />
+              stroke="var(--accent)" stroke-width="2.4" />
         <path d="M17.8 8.6 L20.8 32.5 M24 7 L24 32.5 M30.2 8.6 L27.2 32.5 M13.6 21 Q24 25.4 34.4 21"
-              stroke="var(--ink-3)" stroke-width="1.1" />
+              stroke="var(--accent)" stroke-width="1.4" opacity=".5" />
       </g>
       <path d="M17.5 31.8 h13 a6.5 6.5 0 0 1 -13 0 z" fill="var(--accent)" />
     </svg>
-    <div>
-      <p class="eyebrow">ก๊วนแบดมินตัน · ตัวช่วยจัดคิวสนาม</p>
-      <h1>สุ่มคู่ลงสนาม</h1>
-      <p class="lede">กรอกรายชื่อคนที่มาวันนี้ เลือกเดี่ยวหรือคู่ แล้วเลือกจำนวนสนาม จะสุ่มเร็ว ๆ หรือจัดตารางให้ทุกคนได้วนจับคู่กันครบทุกคนก็ได้ — ทุกรอบชื่อไม่ซ้ำกัน</p>
+    <h1>สุ่มคู่ลงสนาม</h1>
+    <p class="eyebrow">ก๊วนแบดมินตัน · ตัวช่วยจัดคิวสนาม</p>
+
+    <div class="topbar">
+      <button type="button" class="btn btn--ghost btn--install" id="install" hidden>
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M12 4 V15 M7.5 10.5 L12 15 L16.5 10.5 M5 19 H19"
+                stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+        </svg>
+        ติดตั้งเป็นแอป
+      </button>
+      <button type="button" class="icon-btn" id="theme"
+              aria-label="สลับโหมดสว่างและโหมดมืด" title="สลับโหมดสว่างและโหมดมืด">
+        <svg class="theme-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M20 13.5 A8.5 8.5 0 1 1 10.5 4 a6.6 6.6 0 0 0 9.5 9.5 z"
+                stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+        </svg>
+        <svg class="theme-sun" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <circle cx="12" cy="12" r="4.4" stroke="currentColor" stroke-width="2" />
+          <path d="M12 2.6 V5 M12 19 V21.4 M2.6 12 H5 M19 12 H21.4 M5.4 5.4 L7 7 M17 17 L18.6 18.6 M18.6 5.4 L17 7 M7 17 L5.4 18.6"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
     </div>
   </header>
 
   <div class="layout">
     <div class="rail">
       <aside class="panel panel--controls">
-        <div class="field">
-          <div class="field__label">
-            <span class="label">รายชื่อผู้เล่น</span>
-            <span class="count" id="nameCount">0 คน</span>
-          </div>
-          <textarea id="names" spellcheck="false" placeholder="พิมพ์ชื่อ บรรทัดละ 1 คน&#10;หรือคั่นด้วยลูกน้ำก็ได้"></textarea>
-          <p class="hint" id="nameHint">บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ</p>
-        </div>
+        <!-- On a phone this line stands in for the whole panel below it. -->
+        <button type="button" class="setupbar" id="setupToggle" aria-expanded="false" aria-controls="setupBody">
+          <b id="sumPlayers">0 คน</b>
+          <i aria-hidden="true"></i>
+          <span id="sumFmt">คู่ 2:2</span>
+          <i aria-hidden="true"></i>
+          <span id="sumCourts">2 สนาม</span>
+          <span class="setupbar__edit">แก้ไข
+            <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M9 6 L15 12 L9 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+            </svg>
+          </span>
+        </button>
 
-        <div class="field">
-          <span class="label">รูปแบบการแข่ง</span>
-          <div class="segment" id="modeSeg" role="group" aria-label="รูปแบบการแข่ง">
-            <button type="button" data-mode="singles" aria-pressed="false">เดี่ยว <span class="mono">1:1</span></button>
-            <button type="button" data-mode="doubles" aria-pressed="true">คู่ <span class="mono">2:2</span></button>
+        <div class="panel__body" id="setupBody" hidden>
+          <div class="field">
+            <div class="field__label">
+              <span class="label">รายชื่อผู้เล่น</span>
+              <span class="count" id="nameCount">0 คน</span>
+            </div>
+            <textarea id="names" spellcheck="false" placeholder="พิมพ์ชื่อ บรรทัดละ 1 คน&#10;หรือคั่นด้วยลูกน้ำก็ได้"></textarea>
+            <p class="hint" id="nameHint">บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ</p>
           </div>
-        </div>
 
-        <div class="field">
-          <span class="label">วิธีจัดตาราง</span>
-          <div class="segment" id="planSeg" role="group" aria-label="วิธีจัดตาราง">
-            <button type="button" data-plan="random" aria-pressed="true">สุ่มล้วน</button>
-            <button type="button" data-plan="rotate" aria-pressed="false">วนครบทุกคู่</button>
+          <div class="field">
+            <span class="label">รูปแบบการแข่ง</span>
+            <div class="segment" id="modeSeg" role="group" aria-label="รูปแบบการแข่ง">
+              <button type="button" data-mode="singles" aria-pressed="false">เดี่ยว <span class="mono">1:1</span></button>
+              <button type="button" data-mode="doubles" aria-pressed="true">คู่ <span class="mono">2:2</span></button>
+            </div>
           </div>
-          <p class="hint" id="planHint"></p>
-        </div>
 
-        <div class="field">
-          <span class="label">จำนวนสนาม</span>
-          <div class="segment" id="courtSeg" role="group" aria-label="จำนวนสนาม">
-            <button type="button" data-courts="1" aria-pressed="false"><span class="mono">1</span></button>
-            <button type="button" data-courts="2" aria-pressed="true"><span class="mono">2</span></button>
-            <button type="button" data-courts="3" aria-pressed="false"><span class="mono">3</span></button>
-            <button type="button" data-courts="4" aria-pressed="false"><span class="mono">4</span></button>
+          <div class="field">
+            <span class="label">จำนวนสนาม</span>
+            <div class="segment" id="courtSeg" role="group" aria-label="จำนวนสนาม">
+              <button type="button" data-courts="1" aria-pressed="false"><span class="mono">1</span></button>
+              <button type="button" data-courts="2" aria-pressed="true"><span class="mono">2</span></button>
+              <button type="button" data-courts="3" aria-pressed="false"><span class="mono">3</span></button>
+              <button type="button" data-courts="4" aria-pressed="false"><span class="mono">4</span></button>
+            </div>
+            <p class="hint" id="courtHint"></p>
           </div>
-          <p class="hint" id="courtHint"></p>
+
+          <div class="field">
+            <span class="label">วิธีจัดตาราง</span>
+            <div class="segment" id="planSeg" role="group" aria-label="วิธีจัดตาราง">
+              <button type="button" data-plan="random" aria-pressed="true">สุ่มล้วน</button>
+              <button type="button" data-plan="rotate" aria-pressed="false">วนครบทุกคู่</button>
+            </div>
+            <p class="hint" id="planHint"></p>
+          </div>
         </div>
 
         <div class="actions">
           <button type="button" class="btn btn--primary" id="shuffle">สุ่มจับคู่</button>
-          <button type="button" class="btn btn--ghost btn--hold" id="reset">
+          <button type="button" class="btn btn--ghost btn--hold" id="reset"
+                  title="แตะเพื่อล้างผลจับคู่และสถิติ · กดค้าง 1 วินาทีเพื่อล้างทุกอย่าง">
             <span class="btn__hold" aria-hidden="true"></span>
+            <svg class="btn__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+              <path d="M4 12 a8 8 0 1 0 2.6 -5.9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" />
+              <path d="M4 4 V9 H9" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" />
+            </svg>
             <span class="btn__label">รีเซ็ตการจับคู่และสถิติ</span>
           </button>
           <p class="hint">กดปุ่มรีเซ็ตค้างไว้ 1 วินาที เพื่อล้างข้อมูลทั้งหมดรวมรายชื่อ</p>
-          <button type="button" class="btn btn--install" id="install" hidden>
-            ติดตั้งเป็นแอปบนเครื่อง
-          </button>
         </div>
       </aside>
 
       <aside class="panel panel--extras">
-        <div class="field">
-          <div class="field__label">
-            <span class="label">หารค่าก๊วน</span>
-            <span class="count" id="feeCount"></span>
-          </div>
-          <div class="fee">
-            <label class="fee__row">
-              <span>ค่าสนาม</span>
-              <input type="number" id="feeCourt" inputmode="numeric" min="0" step="10" value="400">
-              <span class="fee__unit">บาท</span>
-            </label>
-            <label class="fee__row">
-              <span>ลูกแบดที่ใช้</span>
-              <input type="number" id="feeShuttles" inputmode="numeric" min="0" step="1" value="6">
-              <span class="fee__unit">ลูก</span>
-            </label>
-            <label class="fee__row">
-              <span>ราคาลูกละ</span>
-              <input type="number" id="feePrice" inputmode="numeric" min="0" step="5" value="25">
-              <span class="fee__unit">บาท</span>
-            </label>
-          </div>
-          <div class="fee__out" id="feeOut"></div>
-        </div>
+        <button type="button" class="disclose" id="extrasToggle" aria-expanded="false" aria-controls="extrasBody">
+          ค่าก๊วนและสถิติ
+          <span class="disclose__val" id="extrasVal"></span>
+          <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path d="M9 6 L15 12 L9 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+          </svg>
+        </button>
 
-        <div class="field">
-          <div class="field__label">
-            <span class="label">สถิติวันนี้</span>
-            <span class="count">ลง / พัก</span>
+        <div class="panel__body" id="extrasBody" hidden>
+          <div class="field">
+            <div class="field__label">
+              <span class="label">หารค่าก๊วน</span>
+              <span class="count" id="feeCount"></span>
+            </div>
+            <div class="fee">
+              <label class="fee__row">
+                <span>ค่าสนาม</span>
+                <input type="number" id="feeCourt" inputmode="numeric" min="0" step="10" value="400">
+                <span class="fee__unit">บาท</span>
+              </label>
+              <label class="fee__row">
+                <span>ลูกแบดที่ใช้</span>
+                <input type="number" id="feeShuttles" inputmode="numeric" min="0" step="1" value="6">
+                <span class="fee__unit">ลูก</span>
+              </label>
+              <label class="fee__row">
+                <span>ราคาลูกละ</span>
+                <input type="number" id="feePrice" inputmode="numeric" min="0" step="5" value="25">
+                <span class="fee__unit">บาท</span>
+              </label>
+            </div>
+            <div class="fee__out" id="feeOut"></div>
           </div>
-          <ul class="stat-list" id="stats"></ul>
+
+          <div class="field">
+            <div class="field__label">
+              <span class="label">สถิติวันนี้</span>
+              <span class="count">ลง / พัก</span>
+            </div>
+            <ul class="stat-list" id="stats"></ul>
+          </div>
         </div>
       </aside>
     </div>
 
     <section class="board">
-      <div class="summary" id="summary"></div>
       <p class="status" id="status" role="status"></p>
       <div id="rounds"></div>
       <p class="footnote">ผังสนามวาดตามสัดส่วนมาตรฐาน BWF 13.40 × 6.10 ม. · เส้นในคือขอบสนามเดี่ยว (กว้าง 5.18 ม.)</p>
@@ -890,9 +1129,17 @@
     wipeOk: document.getElementById('wipeOk'),
     wipeCancel: document.getElementById('wipeCancel'),
     stats: document.getElementById('stats'),
-    summary: document.getElementById('summary'),
     status: document.getElementById('status'),
-    rounds: document.getElementById('rounds')
+    rounds: document.getElementById('rounds'),
+    theme: document.getElementById('theme'),
+    setupToggle: document.getElementById('setupToggle'),
+    setupBody: document.getElementById('setupBody'),
+    sumPlayers: document.getElementById('sumPlayers'),
+    sumFmt: document.getElementById('sumFmt'),
+    sumCourts: document.getElementById('sumCourts'),
+    extrasToggle: document.getElementById('extrasToggle'),
+    extrasBody: document.getElementById('extrasBody'),
+    extrasVal: document.getElementById('extrasVal')
   };
 
   /* ---------- helpers ---------- */
@@ -1269,14 +1516,11 @@
     el.status.setAttribute('data-kind', kind || 'ok');
   }
 
-  function pill(label, value) {
-    var p = document.createElement('span');
-    p.className = 'pill';
-    p.appendChild(document.createTextNode(label + ' '));
-    var b = document.createElement('b');
-    b.textContent = value;
-    p.appendChild(b);
-    return p;
+  // Standing in for the whole control panel when it is folded away.
+  function syncSetupBar() {
+    el.sumPlayers.textContent = state.players.length + ' คน';
+    el.sumFmt.textContent = fmtLabel();
+    el.sumCourts.textContent = state.courts + ' สนาม';
   }
 
   function nameChip(text) {
@@ -1301,7 +1545,7 @@
     no.textContent = 'สนาม ' + courtNo;
     var fmt = document.createElement('span');
     fmt.className = 'court__fmt';
-    fmt.textContent = fmtLabel();
+    fmt.textContent = state.mode === 'singles' ? '1:1' : '2:2';
     head.appendChild(no);
     head.appendChild(fmt);
 
@@ -1309,7 +1553,6 @@
     plan.className = 'plan';
     plan.setAttribute('data-fmt', state.mode);
 
-    var tags = ['ฝั่ง A', 'ฝั่ง B'];
     match.forEach(function (side, idx) {
       if (idx === 1) {
         var net = document.createElement('div');
@@ -1319,10 +1562,6 @@
       }
       var box = document.createElement('div');
       box.className = 'side';
-      var tag = document.createElement('span');
-      tag.className = 'side__tag';
-      tag.textContent = tags[idx];
-      box.appendChild(tag);
       side.forEach(function (name) { box.appendChild(nameChip(name)); });
       plan.appendChild(box);
     });
@@ -1339,9 +1578,14 @@
     if (!state.rounds.length) {
       var empty = document.createElement('div');
       empty.className = 'empty';
-      empty.textContent = state.players.length
-        ? 'ยังไม่มีผลการจับคู่ — กด “' + drawLabel() + '” ที่แผงควบคุม'
-        : 'กรอกรายชื่อผู้เล่นก่อน แล้วกด “' + drawLabel() + '”';
+      var lead = document.createElement('b');
+      lead.textContent = state.players.length ? 'พร้อมลงสนามแล้ว' : 'ใครมาตีวันนี้บ้าง';
+      var say = document.createElement('span');
+      say.textContent = state.players.length
+        ? 'กดปุ่ม “' + drawLabel() + '” แล้วจะจัดคนลงสนามให้ทุกรอบ ชื่อไม่ซ้ำกัน'
+        : 'พิมพ์หรือวางรายชื่อจากแชทก๊วน เลือกเดี่ยวหรือคู่และจำนวนสนาม แล้วกด “' + drawLabel() + '”';
+      empty.appendChild(lead);
+      empty.appendChild(say);
       el.rounds.appendChild(empty);
       return;
     }
@@ -1359,11 +1603,11 @@
       head.className = 'round__head';
       var h3 = document.createElement('h3');
       h3.className = 'round__no';
-      h3.textContent = 'รอบที่ ' + (idx + 1);
+      h3.textContent = 'รอบ ' + (idx + 1);
       var meta = document.createElement('span');
       meta.className = 'round__meta';
       var people = round.reduce(function (n, m) { return n + m[0].length + m[1].length; }, 0);
-      meta.textContent = round.length + ' สนาม · ' + people + ' คน';
+      meta.textContent = round.length + ' สนาม · ' + people + ' คนลง';
       head.appendChild(h3);
       head.appendChild(meta);
 
@@ -1422,64 +1666,58 @@
     el.rounds.appendChild(wrap);
   }
 
-  function renderSummary() {
-    el.summary.textContent = '';
-    var per = perCourt();
-    var matches = state.rounds.reduce(function (n, r) { return n + r.length; }, 0);
-    el.summary.appendChild(pill('ผู้เล่น', state.players.length + ' คน'));
-    el.summary.appendChild(pill('รูปแบบ', fmtLabel()));
-    el.summary.appendChild(pill('คน/สนาม', String(per)));
-    var used = courtsUsed();
-    var short = state.rounds.length > 0 && used < state.courts;
-    var courtPill = pill('สนาม', short ? used + '/' + state.courts : String(state.courts));
-    if (short) {
-      courtPill.title = 'เปิดได้ ' + used + ' สนาม จากที่เลือกไว้ ' + state.courts +
-        ' สนาม เพราะจำนวนผู้เล่นลงพร้อมกันได้เท่านี้';
-    }
-    el.summary.appendChild(courtPill);
-    el.summary.appendChild(pill('รอบ', String(state.rounds.length)));
-    el.summary.appendChild(pill('แมตช์', String(matches)));
-    if (state.coverage) {
-      var cov = pill(
-        per === 2 ? 'ได้เจอกันแล้ว' : 'ได้จับคู่กันแล้ว',
-        state.coverage.done + '/' + state.coverage.total + ' คู่'
-      );
-      cov.className += ' pill--accent';
-      el.summary.appendChild(cov);
-    }
+  function tally(word, n, cls) {
+    var v = document.createElement('span');
+    v.className = cls;
+    var sr = document.createElement('span');
+    sr.className = 'sr';
+    sr.textContent = word + ' ';
+    v.appendChild(sr);
+    v.appendChild(document.createTextNode(String(n)));
+    return v;
   }
 
   function renderStats() {
     el.stats.textContent = '';
     if (!state.players.length) {
       var li = document.createElement('li');
-      li.className = 'nm';
+      li.className = 'stat-list__empty';
       li.textContent = 'ยังไม่มีรายชื่อ';
       el.stats.appendChild(li);
       return;
     }
+
+    // The bar is read against whoever has played most, so a fair night shows a
+    // block of equal bars and an unfair one is obvious at a glance.
+    var most = 0;
+    state.players.forEach(function (n) { most = Math.max(most, state.played[n] || 0); });
+
     state.players.slice().sort(function (a, b) {
       return (state.played[b] || 0) - (state.played[a] || 0) || a.localeCompare(b, 'th');
     }).forEach(function (name) {
-      var li = document.createElement('li');
+      var played = state.played[name] || 0;
+      var row = document.createElement('li');
+
       var nm = document.createElement('span');
       nm.className = 'nm';
       nm.textContent = name;
-      var p = document.createElement('span');
-      p.className = 'v';
-      p.textContent = 'ลง ' + (state.played[name] || 0);
-      var r = document.createElement('span');
-      r.className = 'v v--rest';
-      r.textContent = 'พัก ' + (state.rested[name] || 0);
-      li.appendChild(nm);
-      li.appendChild(p);
-      li.appendChild(r);
-      el.stats.appendChild(li);
+
+      var bar = document.createElement('span');
+      bar.className = 'bar';
+      var fill = document.createElement('i');
+      fill.style.width = most ? Math.round((played / most) * 100) + '%' : '0';
+      bar.appendChild(fill);
+
+      row.appendChild(nm);
+      row.appendChild(bar);
+      row.appendChild(tally('ลง', played, 'v'));
+      row.appendChild(tally('พัก', state.rested[name] || 0, 'v v--rest'));
+      el.stats.appendChild(row);
     });
   }
 
   function render() {
-    renderSummary();
+    syncSetupBar();
     renderRounds();
     renderStats();
   }
@@ -1521,10 +1759,12 @@
     el.feeCount.textContent = heads ? '÷ ' + heads + ' คน' : '';
 
     if (!total) {
+      el.extrasVal.textContent = '';
       feeLines('ยังไม่ได้ใส่ค่าใช้จ่าย', 'กรอกค่าสนามหรือค่าลูกแบด แล้วจะหารให้อัตโนมัติ');
       return;
     }
     if (!heads) {
+      el.extrasVal.textContent = 'รวม ' + baht(total) + ' บาท';
       feeLines('รวม ' + baht(total) + ' บาท', 'ยังไม่มีรายชื่อให้หาร');
       return;
     }
@@ -1537,6 +1777,7 @@
     if (collected > total) {
       note += ' · ปัดขึ้นแล้วเก็บได้ ' + baht(collected) + ' เหลือ ' + baht(collected - total);
     }
+    el.extrasVal.textContent = 'คนละ ' + baht(each) + ' บาท';
     feeLines('คนละ ' + baht(each) + ' บาท', note);
   }
 
@@ -1608,6 +1849,7 @@
     var parsed = parseNames(el.names.value);
     state.players = parsed.names;
     el.nameCount.textContent = parsed.names.length + ' คน';
+    syncSetupBar();
     el.nameHint.textContent = parsed.dupes
       ? 'ตัดชื่อซ้ำออก ' + parsed.dupes + ' ชื่อ'
       : 'บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ';
@@ -1774,6 +2016,82 @@
 
   el.shuffle.addEventListener('click', draw);
 
+  /* ---------- folding the control panel away on a phone ---------- */
+
+  var phone = window.matchMedia('(max-width: 880px)');
+  var setupOpen = false;
+
+  function setFold(toggle, body, open) {
+    body.hidden = !open;
+    toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+  }
+
+  // Wide enough for the rail and the panel is simply there, with no bar to open
+  // it; narrow and it answers to the one-line summary above it.
+  function syncSetupFold() {
+    setFold(el.setupToggle, el.setupBody, phone.matches ? setupOpen : true);
+  }
+
+  el.setupToggle.addEventListener('click', function () {
+    setupOpen = el.setupBody.hidden;
+    syncSetupFold();
+  });
+
+  if (phone.addEventListener) phone.addEventListener('change', syncSetupFold);
+  else if (phone.addListener) phone.addListener(syncSetupFold); // Safari before 14
+
+  el.extrasToggle.addEventListener('click', function () {
+    setFold(el.extrasToggle, el.extrasBody, el.extrasBody.hidden);
+  });
+
+  /* ---------- light and dark ---------- */
+
+  var THEME_KEY = 'badminton-theme';
+
+  function systemDark() {
+    return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  }
+
+  function currentlyDark() {
+    var set = document.documentElement.getAttribute('data-theme');
+    if (set === 'dark') return true;
+    if (set === 'light') return false;
+    return systemDark();
+  }
+
+  // Both <meta theme-color> tags carry a media query, so the browser chrome
+  // follows the device. While the app overrides the device, this one goes in
+  // front of them and wins; letting the device decide again removes it.
+  function paintChrome() {
+    var meta = document.getElementById('tcOverride');
+    var set = document.documentElement.getAttribute('data-theme');
+    if (!set) {
+      if (meta) meta.parentNode.removeChild(meta);
+      return;
+    }
+    if (!meta) {
+      meta = document.createElement('meta');
+      meta.id = 'tcOverride';
+      meta.name = 'theme-color';
+      document.head.insertBefore(meta, document.head.firstChild);
+    }
+    meta.content = set === 'dark' ? '#0D1513' : '#F1F3EC';
+  }
+
+  el.theme.addEventListener('click', function () {
+    var next = currentlyDark() ? 'light' : 'dark';
+    // Landing back on what the device says stores nothing, so the app goes on
+    // following it the next time the phone flips over at sunset.
+    if ((next === 'dark') === systemDark()) {
+      document.documentElement.removeAttribute('data-theme');
+      try { localStorage.removeItem(THEME_KEY); } catch (e) { /* nothing stored */ }
+    } else {
+      document.documentElement.setAttribute('data-theme', next);
+      try { localStorage.setItem(THEME_KEY, next); } catch (e) { /* blocked storage */ }
+    }
+    paintChrome();
+  });
+
   /* ---------- hold the reset button to wipe everything ---------- */
 
   var HOLD_MS = 1000;  // the whole press, before the dialog asks
@@ -1933,6 +2251,8 @@
   syncPlanHint();
   syncNames();
   syncCourtHint();
+  syncSetupFold();
+  paintChrome();
   if (usingSample) {
     el.nameHint.textContent = 'ตัวอย่าง 8 ชื่อ — ลบแล้วพิมพ์ชื่อก๊วนของคุณทับได้เลย';
   }

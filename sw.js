@@ -2,7 +2,7 @@
    Two jobs: make the app installable on Android, and keep it usable in a gym
    with no signal. Everything here is static, so the whole app fits in a cache. */
 
-var VERSION = 'v1';
+var VERSION = 'v2';
 var SHELL = 'badminton-shell-' + VERSION;
 var RUNTIME = 'badminton-runtime-' + VERSION;
 var PAGE = './index.html';
