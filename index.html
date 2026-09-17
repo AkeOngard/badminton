@@ -1,5 +1,8 @@
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<!-- viewport-fit=cover is what makes env(safe-area-inset-*) report anything
+     at all on iOS; without it the installed app runs its board under the
+     home indicator and the status bar. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>สุ่มคู่ลงสนาม</title>
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
@@ -59,6 +62,7 @@
     /* One lime, one place: the draw button. It stays the same in both modes so
        the thumb knows where to go without reading anything. */
     --cta: #D9F25C;
+    --cta-press: #C2DE45;
     --cta-ink: #0B3A2F;
     --rest: #7A5510;
     --rest-soft: #F4E9D2;
@@ -104,6 +108,7 @@
       --accent-soft: #16332C;
       --accent-line: #2F6355;
       --cta: #D9F25C;
+      --cta-press: #BCD93F;
       --cta-ink: #0B3A2F;
       --rest: #E3BC69;
       --rest-soft: #2E2718;
@@ -141,6 +146,7 @@
     --accent-soft: #16332C;
     --accent-line: #2F6355;
     --cta: #D9F25C;
+    --cta-press: #BCD93F;
     --cta-ink: #0B3A2F;
     --rest: #E3BC69;
     --rest-soft: #2E2718;
@@ -167,7 +173,10 @@
   .app {
     max-width: 1140px;
     margin: 0 auto;
-    padding: 28px 20px 64px;
+    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
+    padding-bottom: 64px;
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
   }
 
   /* ---------- masthead ---------- */
@@ -441,10 +450,23 @@
     cursor: pointer;
     transition: transform .12s ease, background .15s ease, border-color .15s ease;
   }
-  .btn:active { transform: translateY(1px); }
-  /* iOS paints a grey block over anything tapped. These three answer a press
-     themselves, so the block is only in the way. */
+  /* iOS paints a grey block over anything tapped, and it only paints :active
+     on elements carrying a touch handler — so a tap on the draw button showed
+     nothing at all. The block goes, and the script sets .is-press instead. */
   .btn, .icon-btn, .mini-btn { -webkit-tap-highlight-color: transparent; }
+  .btn:active, .btn.is-press { transform: translateY(1px) scale(.985); }
+  /* The press lands at once and eases back on release: a quick tap would
+     otherwise let go before the 150ms fade had got anywhere. */
+  .btn.is-press { transition-duration: 0s; }
+  .btn--primary:active, .btn--primary.is-press { background: var(--cta-press); }
+  .btn--ghost:active, .btn--ghost.is-press {
+    background: var(--surface-2);
+    border-color: var(--ink-3);
+  }
+  .icon-btn.is-press, .mini-btn.is-press {
+    background: var(--surface-2);
+    border-color: var(--ink-3);
+  }
   /* The one loud thing on the page. */
   .btn--primary {
     background: var(--cta);
@@ -484,7 +506,12 @@
      thumb's reach, whether the settings are folded away or open. */
   @media (max-width: 880px) {
     /* Room under the last card for the bar that now floats over it. */
-    .app { padding: 18px 16px calc(78px + env(safe-area-inset-bottom, 0px)); }
+    .app {
+      padding-top: calc(18px + env(safe-area-inset-top, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      padding-bottom: calc(78px + env(safe-area-inset-bottom, 0px));
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
+    }
     .actions {
       position: fixed;
       left: 0;
@@ -494,11 +521,13 @@
       flex-direction: row;
       align-items: center;
       gap: 10px;
-      padding: 8px 16px;
+      padding-top: 8px;
       /* iOS already keeps the home indicator's strip clear, so take the larger
          of the two rather than stacking ours on top of it — added, it made the
          bar a finger's width taller than it had any reason to be. */
       padding-bottom: max(8px, env(safe-area-inset-bottom, 0px));
+      padding-right: max(16px, env(safe-area-inset-right, 0px));
+      padding-left: max(16px, env(safe-area-inset-left, 0px));
       background: var(--bg);
       border-top: 1px solid var(--line);
     }
@@ -2031,6 +2060,33 @@
   });
 
   el.shuffle.addEventListener('click', draw);
+
+  /* ---------- showing a press on a touchscreen ---------- */
+
+  // Safari paints :active only on elements that carry a touch handler, so on an
+  // iPhone a tap on the draw button looked like nothing had happened. The class
+  // does the same job on every browser, and unlike :active it can be let go of
+  // when the finger slides off into a scroll.
+  var pressed = null;
+
+  function pressOff() {
+    if (!pressed) return;
+    pressed.classList.remove('is-press');
+    pressed = null;
+  }
+
+  document.addEventListener('pointerdown', function (e) {
+    pressOff();
+    var btn = e.target && e.target.closest ? e.target.closest('.btn, .icon-btn, .mini-btn') : null;
+    if (!btn || btn.disabled) return;
+    pressed = btn;
+    btn.classList.add('is-press');
+  }, true);
+
+  ['pointerup', 'pointercancel', 'dragstart'].forEach(function (ev) {
+    document.addEventListener(ev, pressOff, true);
+  });
+  window.addEventListener('blur', pressOff);
 
   /* ---------- folding the control panel away on a phone ---------- */
 
