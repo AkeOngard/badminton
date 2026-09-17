@@ -1776,7 +1776,8 @@
 
   /* ---------- hold the reset button to wipe everything ---------- */
 
-  var HOLD_MS = 1000;
+  var HOLD_MS = 1000;  // the whole press, before the dialog asks
+  var LEAD_MS = 300;   // of which this much stays quiet, so a tap shows no bar
   var holdFrom = 0;
   var holdRaf = 0;
   var holdFired = false;
@@ -1789,9 +1790,12 @@
   }
 
   function holdTick(now) {
-    var done = Math.min(1, (now - holdFrom) / HOLD_MS);
+    var held = now - holdFrom;
+    // An ordinary tap is over inside the lead, so it never flashes the bar red;
+    // past that the bar fills across what is left of the press.
+    var done = Math.min(1, Math.max(0, (held - LEAD_MS) / (HOLD_MS - LEAD_MS)));
     el.reset.style.setProperty('--hold', done);
-    if (done < 1) {
+    if (held < HOLD_MS) {
       holdRaf = requestAnimationFrame(holdTick);
       return;
     }
