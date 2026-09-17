@@ -499,6 +499,7 @@
   .segment button[data-over="true"] { opacity: .45; }
 
   .segment {
+    position: relative;
     display: grid;
     grid-auto-flow: column;
     grid-auto-columns: 1fr;
@@ -508,7 +509,33 @@
     border-radius: var(--r-md);
     box-shadow: inset 0 1px 2px var(--recess);
   }
+  /* The selection slides between segments instead of blinking from one to the
+     next. It is absolutely positioned, so it takes no column of its own. */
+  .segment__thumb {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 0;
+    height: 0;
+    border-radius: var(--r-sm);
+    background: var(--accent);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .22),
+      0 2px 8px rgba(0, 0, 0, .18);
+    pointer-events: none;
+    /* Measured rather than guessed: this curve is a third of the way across at
+       60ms, so the control commits the moment it is tapped, two thirds by
+       120ms, and settled by 250 with no overshoot. Steeper curves cover half
+       the distance before the eye finds them and then drift. */
+    transition:
+      transform .38s cubic-bezier(.45, .75, .2, 1),
+      width .38s cubic-bezier(.45, .75, .2, 1),
+      height .38s cubic-bezier(.45, .75, .2, 1),
+      opacity .2s ease;
+  }
   .segment button {
+    position: relative;
+    z-index: 1;
     font-family: var(--font-body);
     font-size: 13.5px;
     font-weight: 500;
@@ -518,7 +545,7 @@
     border-radius: var(--r-sm);
     padding: 8px 6px;
     cursor: pointer;
-    transition: background .15s ease, color .15s ease;
+    transition: background .15s ease, color .18s ease;
   }
   .segment button .mono { font-size: 12px; }
   .segment button:hover { color: var(--ink); }
@@ -529,6 +556,14 @@
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, .22),
       0 2px 8px rgba(0, 0, 0, .18);
+  }
+  /* Once the script has put a pill in, the buttons stop drawing their own. The
+     label waits for the pill to arrive before it turns, so it is never light
+     text sitting on the bare track mid-slide; the one being left goes at once. */
+  .segment--slide button[aria-pressed="true"] {
+    background: transparent;
+    box-shadow: none;
+    transition: color .2s ease .22s;
   }
 
   .actions {
@@ -2064,6 +2099,7 @@
         b.removeAttribute('title');
       }
     });
+    moveThumb(el.courtSeg);
   }
 
   function save() {
@@ -2118,10 +2154,56 @@
     } catch (e) { return null; }
   }
 
+  /* ---------- the pill that slides between segments ---------- */
+
+  function thumbFor(container) {
+    var thumb = container.querySelector('.segment__thumb');
+    if (!thumb) {
+      thumb = document.createElement('span');
+      thumb.className = 'segment__thumb';
+      thumb.setAttribute('aria-hidden', 'true');
+      container.insertBefore(thumb, container.firstChild);
+      // Only now do the buttons stop painting their own selection: without the
+      // script there is still something to see.
+      container.classList.add('segment--slide');
+    }
+    return thumb;
+  }
+
+  // A folded panel measures zero, so there is nothing to move the pill onto:
+  // it waits out of sight until the panel opens and asks again.
+  function moveThumb(container) {
+    var btn = container.querySelector('button[aria-pressed="true"]');
+    var thumb = thumbFor(container);
+    if (!btn || !btn.offsetWidth) {
+      thumb.style.opacity = '0';
+      return;
+    }
+    thumb.style.width = btn.offsetWidth + 'px';
+    thumb.style.height = btn.offsetHeight + 'px';
+    thumb.style.transform = 'translate(' + btn.offsetLeft + 'px, ' + btn.offsetTop + 'px)';
+    // A court count the head count cannot fill yet is dimmed; the pill dims with
+    // it, the way the button's own background used to.
+    thumb.style.opacity = btn.getAttribute('data-over') === 'true' ? '.45' : '1';
+  }
+
+  // Placing the pill for the first time, or after the row has been resized, is
+  // not a move anyone made — it should not travel across the control.
+  function snapThumbs() {
+    [el.modeSeg, el.courtSeg, el.planSeg].forEach(function (seg) {
+      var thumb = thumbFor(seg);
+      thumb.style.transition = 'none';
+      moveThumb(seg);
+      void thumb.offsetWidth; // commit the jump before the transition returns
+      thumb.style.transition = '';
+    });
+  }
+
   function pressGroup(container, attr, value) {
     Array.prototype.forEach.call(container.querySelectorAll('button'), function (b) {
       b.setAttribute('aria-pressed', b.getAttribute(attr) === String(value) ? 'true' : 'false');
     });
+    moveThumb(container);
   }
 
   el.names.addEventListener('input', syncNames);
@@ -2207,6 +2289,15 @@
   });
   window.addEventListener('blur', pressOff);
 
+  var resizeRaf = 0;
+  window.addEventListener('resize', function () {
+    if (resizeRaf) return;
+    resizeRaf = requestAnimationFrame(function () {
+      resizeRaf = 0;
+      snapThumbs();
+    });
+  });
+
   /* ---------- folding the control panel away on a phone ---------- */
 
   var phone = window.matchMedia('(max-width: 880px)');
@@ -2221,6 +2312,7 @@
   // it; narrow and it answers to the one-line summary above it.
   function syncSetupFold() {
     setFold(el.setupToggle, el.setupBody, phone.matches ? setupOpen : true);
+    if (!el.setupBody.hidden) snapThumbs();
   }
 
   el.setupToggle.addEventListener('click', function () {
@@ -2443,7 +2535,12 @@
   syncNames();
   syncCourtHint();
   syncSetupFold();
+  snapThumbs();
   paintChrome();
+  // The display face lands after first paint and can change a button's height.
+  if (document.fonts && document.fonts.ready && document.fonts.ready.then) {
+    document.fonts.ready.then(snapThumbs).catch(function () { /* nothing to redo */ });
+  }
   if (usingSample) {
     el.nameHint.textContent = 'ตัวอย่าง 8 ชื่อ — ลบแล้วพิมพ์ชื่อก๊วนของคุณทับได้เลย';
   }
