@@ -176,6 +176,13 @@
   }
 
   /* ---------- control panel ---------- */
+  .rail {
+    display: flex;
+    flex-direction: column;
+    gap: 22px;
+    position: sticky;
+    top: 20px;
+  }
   .panel {
     display: flex;
     flex-direction: column;
@@ -184,11 +191,15 @@
     background: var(--surface);
     border: 1px solid var(--line);
     border-radius: var(--r-lg);
-    position: sticky;
-    top: 20px;
   }
   @media (max-width: 880px) {
-    .panel { position: static; }
+    /* On a phone the draw is what you opened the app for, so it goes above the
+       money and the tallies. Dropping the rail's own box lets its two cards be
+       ordered against the board inside the single column. */
+    .rail { display: contents; }
+    .panel--controls { order: 1; }
+    .board { order: 2; }
+    .panel--extras { order: 3; }
   }
   .field { display: flex; flex-direction: column; gap: 9px; }
   .field__label {
@@ -723,89 +734,93 @@
   </header>
 
   <div class="layout">
-    <aside class="panel">
-      <div class="field">
-        <div class="field__label">
-          <span class="label">รายชื่อผู้เล่น</span>
-          <span class="count" id="nameCount">0 คน</span>
+    <div class="rail">
+      <aside class="panel panel--controls">
+        <div class="field">
+          <div class="field__label">
+            <span class="label">รายชื่อผู้เล่น</span>
+            <span class="count" id="nameCount">0 คน</span>
+          </div>
+          <textarea id="names" spellcheck="false" placeholder="พิมพ์ชื่อ บรรทัดละ 1 คน&#10;หรือคั่นด้วยลูกน้ำก็ได้"></textarea>
+          <p class="hint" id="nameHint">บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ</p>
         </div>
-        <textarea id="names" spellcheck="false" placeholder="พิมพ์ชื่อ บรรทัดละ 1 คน&#10;หรือคั่นด้วยลูกน้ำก็ได้"></textarea>
-        <p class="hint" id="nameHint">บรรทัดละ 1 ชื่อ หรือคั่นด้วย , — ชื่อซ้ำจะถูกตัดออกอัตโนมัติ</p>
-      </div>
 
-      <div class="field">
-        <span class="label">รูปแบบการแข่ง</span>
-        <div class="segment" id="modeSeg" role="group" aria-label="รูปแบบการแข่ง">
-          <button type="button" data-mode="singles" aria-pressed="false">เดี่ยว <span class="mono">1:1</span></button>
-          <button type="button" data-mode="doubles" aria-pressed="true">คู่ <span class="mono">2:2</span></button>
+        <div class="field">
+          <span class="label">รูปแบบการแข่ง</span>
+          <div class="segment" id="modeSeg" role="group" aria-label="รูปแบบการแข่ง">
+            <button type="button" data-mode="singles" aria-pressed="false">เดี่ยว <span class="mono">1:1</span></button>
+            <button type="button" data-mode="doubles" aria-pressed="true">คู่ <span class="mono">2:2</span></button>
+          </div>
         </div>
-      </div>
 
-      <div class="field">
-        <span class="label">วิธีจัดตาราง</span>
-        <div class="segment" id="planSeg" role="group" aria-label="วิธีจัดตาราง">
-          <button type="button" data-plan="random" aria-pressed="true">สุ่มล้วน</button>
-          <button type="button" data-plan="rotate" aria-pressed="false">วนครบทุกคู่</button>
+        <div class="field">
+          <span class="label">วิธีจัดตาราง</span>
+          <div class="segment" id="planSeg" role="group" aria-label="วิธีจัดตาราง">
+            <button type="button" data-plan="random" aria-pressed="true">สุ่มล้วน</button>
+            <button type="button" data-plan="rotate" aria-pressed="false">วนครบทุกคู่</button>
+          </div>
+          <p class="hint" id="planHint"></p>
         </div>
-        <p class="hint" id="planHint"></p>
-      </div>
 
-      <div class="field">
-        <span class="label">จำนวนสนาม</span>
-        <div class="segment" id="courtSeg" role="group" aria-label="จำนวนสนาม">
-          <button type="button" data-courts="1" aria-pressed="false"><span class="mono">1</span></button>
-          <button type="button" data-courts="2" aria-pressed="true"><span class="mono">2</span></button>
-          <button type="button" data-courts="3" aria-pressed="false"><span class="mono">3</span></button>
-          <button type="button" data-courts="4" aria-pressed="false"><span class="mono">4</span></button>
+        <div class="field">
+          <span class="label">จำนวนสนาม</span>
+          <div class="segment" id="courtSeg" role="group" aria-label="จำนวนสนาม">
+            <button type="button" data-courts="1" aria-pressed="false"><span class="mono">1</span></button>
+            <button type="button" data-courts="2" aria-pressed="true"><span class="mono">2</span></button>
+            <button type="button" data-courts="3" aria-pressed="false"><span class="mono">3</span></button>
+            <button type="button" data-courts="4" aria-pressed="false"><span class="mono">4</span></button>
+          </div>
+          <p class="hint" id="courtHint"></p>
         </div>
-        <p class="hint" id="courtHint"></p>
-      </div>
 
-      <div class="actions">
-        <button type="button" class="btn btn--primary" id="shuffle">สุ่มจับคู่</button>
-        <button type="button" class="btn btn--ghost btn--hold" id="reset">
-          <span class="btn__hold" aria-hidden="true"></span>
-          <span class="btn__label">รีเซ็ตการจับคู่และสถิติ</span>
-        </button>
-        <p class="hint">กดปุ่มรีเซ็ตค้างไว้ 1 วินาที เพื่อล้างข้อมูลทั้งหมดรวมรายชื่อ</p>
-        <button type="button" class="btn btn--install" id="install" hidden>
-          ติดตั้งเป็นแอปบนเครื่อง
-        </button>
-      </div>
+        <div class="actions">
+          <button type="button" class="btn btn--primary" id="shuffle">สุ่มจับคู่</button>
+          <button type="button" class="btn btn--ghost btn--hold" id="reset">
+            <span class="btn__hold" aria-hidden="true"></span>
+            <span class="btn__label">รีเซ็ตการจับคู่และสถิติ</span>
+          </button>
+          <p class="hint">กดปุ่มรีเซ็ตค้างไว้ 1 วินาที เพื่อล้างข้อมูลทั้งหมดรวมรายชื่อ</p>
+          <button type="button" class="btn btn--install" id="install" hidden>
+            ติดตั้งเป็นแอปบนเครื่อง
+          </button>
+        </div>
+      </aside>
 
-      <div class="field">
-        <div class="field__label">
-          <span class="label">หารค่าก๊วน</span>
-          <span class="count" id="feeCount"></span>
+      <aside class="panel panel--extras">
+        <div class="field">
+          <div class="field__label">
+            <span class="label">หารค่าก๊วน</span>
+            <span class="count" id="feeCount"></span>
+          </div>
+          <div class="fee">
+            <label class="fee__row">
+              <span>ค่าสนาม</span>
+              <input type="number" id="feeCourt" inputmode="numeric" min="0" step="10" value="400">
+              <span class="fee__unit">บาท</span>
+            </label>
+            <label class="fee__row">
+              <span>ลูกแบดที่ใช้</span>
+              <input type="number" id="feeShuttles" inputmode="numeric" min="0" step="1" value="6">
+              <span class="fee__unit">ลูก</span>
+            </label>
+            <label class="fee__row">
+              <span>ราคาลูกละ</span>
+              <input type="number" id="feePrice" inputmode="numeric" min="0" step="5" value="25">
+              <span class="fee__unit">บาท</span>
+            </label>
+          </div>
+          <div class="fee__out" id="feeOut"></div>
         </div>
-        <div class="fee">
-          <label class="fee__row">
-            <span>ค่าสนาม</span>
-            <input type="number" id="feeCourt" inputmode="numeric" min="0" step="10" value="400">
-            <span class="fee__unit">บาท</span>
-          </label>
-          <label class="fee__row">
-            <span>ลูกแบดที่ใช้</span>
-            <input type="number" id="feeShuttles" inputmode="numeric" min="0" step="1" value="6">
-            <span class="fee__unit">ลูก</span>
-          </label>
-          <label class="fee__row">
-            <span>ราคาลูกละ</span>
-            <input type="number" id="feePrice" inputmode="numeric" min="0" step="5" value="25">
-            <span class="fee__unit">บาท</span>
-          </label>
-        </div>
-        <div class="fee__out" id="feeOut"></div>
-      </div>
 
-      <div class="field">
-        <div class="field__label">
-          <span class="label">สถิติวันนี้</span>
-          <span class="count">ลง / พัก</span>
+        <div class="field">
+          <div class="field__label">
+            <span class="label">สถิติวันนี้</span>
+            <span class="count">ลง / พัก</span>
+          </div>
+          <ul class="stat-list" id="stats"></ul>
         </div>
-        <ul class="stat-list" id="stats"></ul>
-      </div>
-    </aside>
+      </aside>
+    </div>
 
     <section class="board">
       <div class="summary" id="summary"></div>
