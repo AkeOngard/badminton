@@ -16,8 +16,8 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="สุ่มคู่ลงสนาม">
 <meta name="application-name" content="สุ่มคู่ลงสนาม">
-<meta name="theme-color" media="(prefers-color-scheme: light)" content="#F1F3EC">
-<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0D1513">
+<meta name="theme-color" media="(prefers-color-scheme: light)" content="#0E5142">
+<meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0D3A30">
 
 <!-- The saved choice has to land on <html> before the first paint, or a phone
      set to dark flashes the light board on every launch. -->
@@ -61,6 +61,9 @@
     --accent-line: #BFD3C6;
     /* One lime, one place: the draw button. It stays the same in both modes so
        the thumb knows where to go without reading anything. */
+    /* The band across the top. It stays deep in both modes: it is the thing
+       the white status bar text has to be readable against. */
+    --brandbar: #0E5142;
     --cta: #D9F25C;
     --cta-press: #C2DE45;
     --cta-ink: #0B3A2F;
@@ -123,6 +126,7 @@
       --accent-ink: #F4F9F3;
       --accent-soft: #16332C;
       --accent-line: #2F6355;
+      --brandbar: #0D3A30;
       --cta: #D9F25C;
       --cta-press: #BCD93F;
       --cta-ink: #0B3A2F;
@@ -172,6 +176,7 @@
     --accent-ink: #F4F9F3;
     --accent-soft: #16332C;
     --accent-line: #2F6355;
+    --brandbar: #0D3A30;
     --cta: #D9F25C;
     --cta-press: #BCD93F;
     --cta-ink: #0B3A2F;
@@ -279,33 +284,75 @@
   .app {
     max-width: 1140px;
     margin: 0 auto;
-    padding-top: calc(28px + env(safe-area-inset-top, 0px));
+    padding-top: 0;
     padding-right: max(20px, env(safe-area-inset-right, 0px));
     padding-bottom: 64px;
     padding-left: max(20px, env(safe-area-inset-left, 0px));
   }
 
-  /* ---------- masthead ---------- */
+  /* ---------- the band across the top ---------- */
+  /* It runs edge to edge and up through the top inset, which is what makes the
+     white clock iOS paints over a standalone app readable: the app's own deep
+     green is behind it instead of the pale board. */
   .masthead {
+    background: var(--brandbar);
+    border-radius: 0 0 var(--r-lg) var(--r-lg);
+    padding-top: calc(15px + env(safe-area-inset-top, 0px));
+    padding-bottom: 16px;
+    padding-left: max(20px, env(safe-area-inset-left, 0px));
+    padding-right: max(20px, env(safe-area-inset-right, 0px));
+    margin-bottom: 18px;
+    box-shadow: 0 8px 26px rgba(9, 32, 26, .22);
+  }
+  /* Scrolled, the band goes with the page — this stays behind the clock. */
+  .statusbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: env(safe-area-inset-top, 0px);
+    background: var(--brandbar);
+    z-index: 40;
+    pointer-events: none;
+  }
+  .masthead__in {
+    max-width: 1140px;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     gap: 12px;
-    margin-bottom: 18px;
   }
   .mark { flex: none; width: 30px; height: 30px; }
   h1 {
     margin: 0;
     font-family: var(--font-display);
     font-weight: 700;
-    font-size: clamp(20px, 2.6vw, 24px);
+    font-size: clamp(21px, 2.7vw, 26px);
     line-height: 1.2;
     letter-spacing: .005em;
+    color: #F4F9F3;
   }
   .eyebrow {
     margin: 0;
     font-size: 13px;
-    color: var(--ink-3);
+    color: rgba(244, 249, 243, .72);
   }
+  /* On the band the controls are cut out of it rather than laid on it. */
+  .masthead .icon-btn,
+  .masthead .btn--install {
+    background: rgba(255, 255, 255, .14);
+    color: #F4F9F3;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .22),
+      inset 0 0 0 1px rgba(255, 255, 255, .18);
+  }
+  .masthead .icon-btn:hover,
+  .masthead .btn--install:hover {
+    background: rgba(255, 255, 255, .22);
+    color: #FFFFFF;
+  }
+  .masthead .icon-btn.is-press,
+  .masthead .btn--install.is-press { background: rgba(255, 255, 255, .28); }
   /* The strapline is the first thing to go when the row gets tight. */
   @media (max-width: 760px) { .eyebrow { display: none; } }
 
@@ -649,7 +696,7 @@
   @media (max-width: 880px) {
     /* Room under the last card for the bar that now floats over it. */
     .app {
-      padding-top: calc(18px + env(safe-area-inset-top, 0px));
+      padding-top: 0;
       padding-right: max(16px, env(safe-area-inset-right, 0px));
       padding-bottom: calc(90px + env(safe-area-inset-bottom, 0px));
       padding-left: max(16px, env(safe-area-inset-left, 0px));
@@ -1115,16 +1162,18 @@
   }
 </style>
 
-<div class="app">
-  <header class="masthead">
+<div class="statusbar" aria-hidden="true"></div>
+
+<header class="masthead">
+  <div class="masthead__in">
     <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
       <g fill="none" stroke-linecap="round" stroke-linejoin="round">
         <path d="M10.5 10.5 L17.5 32.5 M37.5 10.5 L30.5 32.5 M10.5 10.5 Q24 3.5 37.5 10.5"
-              stroke="var(--accent)" stroke-width="2.4" />
+              stroke="#D9F25C" stroke-width="2.4" />
         <path d="M17.8 8.6 L20.8 32.5 M24 7 L24 32.5 M30.2 8.6 L27.2 32.5 M13.6 21 Q24 25.4 34.4 21"
-              stroke="var(--accent)" stroke-width="1.4" opacity=".5" />
+              stroke="#D9F25C" stroke-width="1.4" opacity=".5" />
       </g>
-      <path d="M17.5 31.8 h13 a6.5 6.5 0 0 1 -13 0 z" fill="var(--accent)" />
+      <path d="M17.5 31.8 h13 a6.5 6.5 0 0 1 -13 0 z" fill="#D9F25C" />
     </svg>
     <h1>สุ่มคู่ลงสนาม</h1>
     <p class="eyebrow">ก๊วนแบดมินตัน · ตัวช่วยจัดคิวสนาม</p>
@@ -1150,7 +1199,10 @@
         </svg>
       </button>
     </div>
-  </header>
+  </div>
+</header>
+
+<div class="app">
 
   <div class="layout">
     <div class="rail">
@@ -2394,7 +2446,7 @@
       meta.name = 'theme-color';
       document.head.insertBefore(meta, document.head.firstChild);
     }
-    meta.content = set === 'dark' ? '#0D1513' : '#F1F3EC';
+    meta.content = set === 'dark' ? '#0D3A30' : '#0E5142';
   }
 
   el.theme.addEventListener('click', function () {
