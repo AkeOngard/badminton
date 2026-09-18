@@ -56,6 +56,10 @@ sw.js                     service worker — ทำให้ติดตั้�
 > `viewport-fit=cover` ในแท็ก viewport เป็นตัวที่ทำให้ `env(safe-area-inset-*)` มีค่าบน iOS
 > ถ้าไม่มี ค่าจะเป็น 0 เสมอ และแอปที่ติดตั้งแล้วจะวางแถบปุ่มล่างทับแถบ home indicator
 
+> `apple-mobile-web-app-status-bar-style: black-translucent` ทำให้ iOS ทาตัวเลขนาฬิกาเป็นสีขาวเสมอ
+> แถบเขียวด้านบน (`.masthead` + `.statusbar`) จึงยืดขึ้นไปคลุม `env(safe-area-inset-top)` ให้นาฬิกามีพื้นเข้มรองรับ
+> ถ้าเปลี่ยนสีแถบ อย่าลืมขยับ `--brandbar`, แท็ก `theme-color` ทั้งสองอัน และค่าใน `paintChrome()` ให้ตรงกัน
+
 > iOS ไม่รองรับทั้ง SVG และ `data:` URI สำหรับไอคอนบนหน้าจอโฮม จึงต้องมีไฟล์ PNG จริง
 > คู่กับแท็ก `<link rel="apple-touch-icon">` เสมอ ไม่อย่างนั้นจะได้ภาพหน้าเว็บย่อส่วนแทนโลโก้
 
