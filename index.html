@@ -778,6 +778,28 @@
     font-size: 14px;
   }
   .stat-list li.stat-list__empty { grid-template-columns: 1fr; color: var(--ink-3); }
+  /* One dot per match the busiest player has had: filled for the ones this
+     player took, hollow for the ones they missed. Countable, where a bar only
+     said "shorter". */
+  .stat-list .dots {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+  }
+  .stat-list .dots i {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .stat-list .dots i.off {
+    background: transparent;
+    box-shadow: inset 0 0 0 1.5px var(--accent);
+    opacity: .32;
+  }
+  /* The fallback for a rotation long enough that the dots would wrap into a
+     paragraph of their own. */
   .stat-list .bar {
     height: 6px;
     border-radius: 100px;
@@ -1964,6 +1986,29 @@
     return v;
   }
 
+  // Twelve dots is about what a stats row can hold before they wrap; a full
+  // rotation can run past twenty, and those rows fall back to a bar.
+  var DOT_MAX = 12;
+
+  function meter(played, most) {
+    if (most > 0 && most <= DOT_MAX) {
+      var dots = document.createElement('span');
+      dots.className = 'dots';
+      for (var i = 0; i < most; i++) {
+        var dot = document.createElement('i');
+        if (i >= played) dot.className = 'off';
+        dots.appendChild(dot);
+      }
+      return dots;
+    }
+    var bar = document.createElement('span');
+    bar.className = 'bar';
+    var fill = document.createElement('i');
+    fill.style.width = most ? Math.round((played / most) * 100) + '%' : '0';
+    bar.appendChild(fill);
+    return bar;
+  }
+
   function renderStats() {
     el.stats.textContent = '';
     if (!state.players.length) {
@@ -1974,8 +2019,8 @@
       return;
     }
 
-    // The bar is read against whoever has played most, so a fair night shows a
-    // block of equal bars and an unfair one is obvious at a glance.
+    // Everything is read against whoever has played most, so a fair night shows
+    // a block of full rows and an unfair one is obvious at a glance.
     var most = 0;
     state.players.forEach(function (n) { most = Math.max(most, state.played[n] || 0); });
 
@@ -1989,14 +2034,8 @@
       nm.className = 'nm';
       nm.textContent = name;
 
-      var bar = document.createElement('span');
-      bar.className = 'bar';
-      var fill = document.createElement('i');
-      fill.style.width = most ? Math.round((played / most) * 100) + '%' : '0';
-      bar.appendChild(fill);
-
       row.appendChild(nm);
-      row.appendChild(bar);
+      row.appendChild(meter(played, most));
       row.appendChild(tally('ลง', played, 'v'));
       row.appendChild(tally('พัก', state.rested[name] || 0, 'v v--rest'));
       el.stats.appendChild(row);
