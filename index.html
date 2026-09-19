@@ -1409,7 +1409,8 @@
     coverage: null,
     played: {},
     rested: {},
-    pairs: {}
+    pairs: {},
+    waits: {}
   };
 
   var el = {
@@ -1494,33 +1495,45 @@
   }
 
   // Fewest games first, random order inside each tier (Array.sort is stable).
+  // Fewest games first; between players on the same count, whoever has been off
+  // court longest. Array.sort is stable, so the shuffle survives as the last
+  // tiebreak — without the wait, two people level on games would take turns by
+  // coin flip and one of them could sit out three draws running.
   function queueOrder(players) {
     return shuffled(players).sort(function (a, b) {
-      return (state.played[a] || 0) - (state.played[b] || 0);
+      return ((state.played[a] || 0) - (state.played[b] || 0)) ||
+             ((state.waits[b] || 0) - (state.waits[a] || 0));
     });
   }
 
   function pairKey(a, b) { return a < b ? a + '\u0000' + b : b + '\u0000' + a; }
 
-  // Of the three ways to split 4 players, take the one with the least shared history.
-  function splitFour(four) {
-    var options = [
-      [[four[0], four[1]], [four[2], four[3]]],
-      [[four[0], four[2]], [four[1], four[3]]],
-      [[four[0], four[3]], [four[1], four[2]]]
-    ];
-    var best = null, bestScore = Infinity;
-    shuffled(options).forEach(function (opt) {
-      var score = (state.pairs[pairKey(opt[0][0], opt[0][1])] || 0) +
-                  (state.pairs[pairKey(opt[1][0], opt[1][1])] || 0);
-      if (score < bestScore) { bestScore = score; best = opt; }
+  // Who shared a court with whom: partners in doubles, the two who met in
+  // singles — the pairings a later draw should avoid repeating.
+  function pairsOf(match) {
+    var keys = [];
+    match.forEach(function (side) {
+      if (side.length === 2) keys.push(pairKey(side[0], side[1]));
     });
-    return best;
+    if (match[0].length === 1 && match[1].length === 1) {
+      keys.push(pairKey(match[0][0], match[1][0]));
+    }
+    return keys;
   }
 
-  function makeMatch(group) {
-    if (group.length === 2) return [[group[0]], [group[1]]];
-    return splitFour(group);
+  function recordPairs(match) {
+    pairsOf(match).forEach(function (k) {
+      state.pairs[k] = (state.pairs[k] || 0) + 1;
+    });
+  }
+
+  // Re-dealing a round replaces its pairings, so the old ones stop counting
+  // against the next draw. The play counts stand: the same people still played.
+  function forgetPairs(match) {
+    pairsOf(match).forEach(function (k) {
+      if (state.pairs[k] > 1) state.pairs[k]--;
+      else delete state.pairs[k];
+    });
   }
 
   function recordMatch(match) {
@@ -1528,24 +1541,83 @@
       side.forEach(function (name) {
         state.played[name] = (state.played[name] || 0) + 1;
       });
-      if (side.length === 2) {
-        var k = pairKey(side[0], side[1]);
-        state.pairs[k] = (state.pairs[k] || 0) + 1;
-      }
     });
+    recordPairs(match);
   }
 
   /* ---------- schedules ---------- */
 
-  // One pass of the draw: everyone plays once, the remainder sits this set out.
-  function randomGames(players, per) {
-    var queue = queueOrder(players);
-    var matchCount = Math.floor(queue.length / per);
-    var games = [];
-    for (var i = 0; i < matchCount * per; i += per) {
-      games.push(makeMatch(queue.slice(i, i + per)));
+  // Pair the whole group at once, always taking the combination that has
+  // happened least. Taking each player in turn and handing them their own best
+  // partner strands the last few together, however often they have played.
+  function pairCost(a, b) { return state.pairs[pairKey(a, b)] || 0; }
+
+  function cheapestPairs(pool) {
+    var left = pool.slice();
+    var out = [];
+    while (left.length > 1) {
+      var bi = 0, bj = 1, bestSeen = Infinity;
+      for (var i = 0; i < left.length && bestSeen; i++) {
+        for (var j = i + 1; j < left.length; j++) {
+          var seen = pairCost(left[i], left[j]);
+          if (seen < bestSeen) { bestSeen = seen; bi = i; bj = j; }
+          if (!bestSeen) break; // an untried pairing cannot be beaten
+        }
+      }
+      out.push([left[bi], left[bj]]);
+      left.splice(bj, 1);
+      left.splice(bi, 1);
     }
+    return out;
+  }
+
+  // Greedy still leaves repeats a swap could undo, so trade partners between
+  // two pairs wherever that lowers the total history between them.
+  function improvePairs(pairs) {
+    var moved = true;
+    var guard = 0;
+    while (moved && guard++ < 40) {
+      moved = false;
+      for (var i = 0; i < pairs.length; i++) {
+        for (var j = i + 1; j < pairs.length; j++) {
+          var a = pairs[i][0], b = pairs[i][1], c = pairs[j][0], d = pairs[j][1];
+          var now = pairCost(a, b) + pairCost(c, d);
+          if (pairCost(a, c) + pairCost(b, d) < now) {
+            pairs[i] = [a, c]; pairs[j] = [b, d]; moved = true;
+          } else if (pairCost(a, d) + pairCost(b, c) < now) {
+            pairs[i] = [a, d]; pairs[j] = [b, c]; moved = true;
+          }
+        }
+      }
+    }
+    return pairs;
+  }
+
+  // Build the matches from the front of the queue. In singles a pair is the
+  // match; in doubles two pairs share a court.
+  function dealMatches(queue, per) {
+    var pool = queue.slice(0, Math.floor(queue.length / per) * per);
+    var rank = Object.create(null);
+    pool.forEach(function (name, i) { rank[name] = i; });
+
+    var pairs = improvePairs(cheapestPairs(pool));
+    // Whoever has waited longest should be on the first court of the draw, not
+    // wherever the pairing happened to leave them.
+    var order = function (pair) { return Math.min(rank[pair[0]], rank[pair[1]]); };
+    pairs.sort(function (x, y) { return order(x) - order(y); });
+
+    var games = [];
+    if (per === 2) {
+      pairs.forEach(function (pair) { games.push([[pair[0]], [pair[1]]]); });
+      return games;
+    }
+    for (var i = 0; i + 1 < pairs.length; i += 2) games.push([pairs[i], pairs[i + 1]]);
     return games;
+  }
+
+  // One pass of the draw: everyone who fits plays once, the remainder sits out.
+  function randomGames(players, per) {
+    return dealMatches(queueOrder(players), per);
   }
 
   // Circle method: n-1 rounds of disjoint pairs covering every pair exactly once.
@@ -1721,6 +1793,10 @@
     state.resting = players.filter(function (n) { return !everPlayed[n]; });
     state.resting.forEach(function (name) {
       state.rested[name] = (state.rested[name] || 0) + 1;
+      state.waits[name] = (state.waits[name] || 0) + 1;
+    });
+    players.forEach(function (name) {
+      if (everPlayed[name]) state.waits[name] = 0;
     });
 
     state.waiting = state.rounds.map(function (round) {
@@ -1761,14 +1837,11 @@
     if (!round) return;
     var people = [];
     round.forEach(function (match) {
+      forgetPairs(match);
       match.forEach(function (side) { people = people.concat(side); });
     });
-    var per = perCourt();
-    var mixed = shuffled(people);
-    var fresh = [];
-    for (var i = 0; i < mixed.length; i += per) {
-      fresh.push(makeMatch(mixed.slice(i, i + per)));
-    }
+    var fresh = dealMatches(shuffled(people), perCourt());
+    fresh.forEach(recordPairs);
     state.rounds[index] = fresh;
     render();
     if (index === 0) animateDraw();
@@ -1784,6 +1857,7 @@
     state.played = {};
     state.rested = {};
     state.pairs = {};
+    state.waits = {};
     render();
     save();
     setStatus('ล้างผลและสถิติแล้ว กด “' + drawLabel() + '” เพื่อเริ่มใหม่', 'ok');
@@ -1798,6 +1872,7 @@
     state.played = {};
     state.rested = {};
     state.pairs = {};
+    state.waits = {};
     clearDraw();
     el.names.value = '';
     pressGroup(el.modeSeg, 'data-mode', state.mode);
@@ -2235,6 +2310,7 @@
         names: el.names.value, mode: state.mode, plan: state.plan, courts: state.courts,
         fee: feeState(), savedAt: Date.now(),
         played: state.played, rested: state.rested, pairs: state.pairs,
+        waits: state.waits,
         rounds: state.rounds, waiting: state.waiting,
         resting: state.resting, coverage: state.coverage
       }));
@@ -2635,6 +2711,7 @@
       state.played = countsFrom(saved.played);
       state.rested = countsFrom(saved.rested);
       state.pairs = countsFrom(saved.pairs);
+      state.waits = countsFrom(saved.waits);
       // The session is picked up as it was left, drawn or not. Drawing here
       // instead would add a round nobody played to the tally just restored.
       resumed = true;
