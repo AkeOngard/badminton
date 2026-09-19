@@ -963,6 +963,16 @@
     color: var(--ink-3);
     margin-left: auto;
   }
+  /* A 1:1 court opened inside a doubles draw: the one card that breaks the
+     pattern says so, so nobody walks onto it expecting a partner. */
+  .court--odd .court__fmt {
+    padding: 1px 8px;
+    border: 1px solid var(--accent-line);
+    border-radius: 100px;
+    background: var(--accent-soft);
+    color: var(--ink);
+    font-weight: 500;
+  }
   .plan {
     position: relative;
     aspect-ratio: 2.2 / 1;
@@ -1163,6 +1173,8 @@
     font-size: 18px;
     color: var(--danger);
   }
+  /* A question, not a warning: nothing is lost whichever way it is answered. */
+  .modal__title--ask { color: var(--ink); }
   .modal__body {
     margin: 0 0 18px;
     font-size: 14px;
@@ -1386,6 +1398,15 @@
   </div>
 </dialog>
 
+<dialog class="modal" id="mixDlg" aria-labelledby="mixTitle" aria-describedby="mixBody">
+  <h2 class="modal__title modal__title--ask" id="mixTitle">คนไม่พอเล่นคู่ 2:2 ครบทุกสนาม</h2>
+  <p class="modal__body" id="mixBody"></p>
+  <div class="modal__actions">
+    <button type="button" class="btn btn--ghost" id="mixNo">ไม่ต้อง ให้พัก</button>
+    <button type="button" class="btn btn--primary" id="mixYes" autofocus>เปิดเป็น 1:1</button>
+  </div>
+</dialog>
+
 <script>
 (function () {
   'use strict';
@@ -1433,6 +1454,11 @@
     wipeDlg: document.getElementById('wipeDlg'),
     wipeOk: document.getElementById('wipeOk'),
     wipeCancel: document.getElementById('wipeCancel'),
+    mixDlg: document.getElementById('mixDlg'),
+    mixTitle: document.getElementById('mixTitle'),
+    mixBody: document.getElementById('mixBody'),
+    mixYes: document.getElementById('mixYes'),
+    mixNo: document.getElementById('mixNo'),
     stats: document.getElementById('stats'),
     status: document.getElementById('status'),
     rounds: document.getElementById('rounds'),
@@ -1616,8 +1642,43 @@
   }
 
   // One pass of the draw: everyone who fits plays once, the remainder sits out.
-  function randomGames(players, per) {
-    return dealMatches(queueOrder(players), per);
+  // With withSingles, the next two in line after the doubles meet one against
+  // one on the court the doubles left empty; whoever has played most still rests.
+  function randomGames(players, per, withSingles) {
+    var queue = queueOrder(players);
+    var games = dealMatches(queue, per);
+    if (withSingles) {
+      var from = games.length * per;
+      var spare = queue.slice(from, from + 2);
+      if (spare.length === 2) games.push([[spare[0]], [spare[1]]]);
+    }
+    return games;
+  }
+
+  function isSinglesMatch(match) {
+    return match[0].length === 1 && match[1].length === 1;
+  }
+
+  // A doubles draw can leave a court empty with two or three people over. They
+  // can still play on it, one against one. Returns what the question needs to
+  // say, or null when there is nothing to offer. Random draws only: slotting
+  // singles into a rotation would break its every-partner guarantee.
+  function singlesOffer() {
+    if (state.mode !== 'doubles' || state.plan !== 'random') return null;
+    var n = state.players.length;
+    var doubles = Math.floor(n / 4);
+    var left = n - doubles * 4;
+    var inLast = doubles % state.courts;   // doubles games in the last round
+    var courtFree = doubles === 0 || inLast !== 0;
+    if (!courtFree || left < 2) return null;
+    return {
+      players: n,
+      doubles: doubles,
+      left: left,
+      rest: left - 2,
+      round: Math.max(1, Math.ceil(doubles / state.courts)),
+      court: inLast + 1
+    };
   }
 
   // Circle method: n-1 rounds of disjoint pairs covering every pair exactly once.
@@ -1751,7 +1812,10 @@
     var seen = Object.create(null);
     var done = 0;
     games.forEach(function (g) {
-      var duos = per === 2 ? [[g[0][0], g[1][0]]] : [g[0], g[1]];
+      // A 1:1 court inside a doubles draw has no partners to count.
+      var duos = per === 2
+        ? [[g[0][0], g[1][0]]]
+        : [g[0], g[1]].filter(function (side) { return side.length === 2; });
       duos.forEach(function (d) {
         var k = pairKey(d[0], d[1]);
         if (!seen[k]) { seen[k] = 1; done++; }
@@ -1763,16 +1827,19 @@
 
   /* ---------- the draw ---------- */
 
-  function draw() {
+  // withSingles is true only when someone has just said yes to the question
+  // in requestDraw(); the button never draws a 1:1 court unasked.
+  function draw(withSingles) {
     var per = perCourt();
     var players = state.players;
+    var offer = withSingles === true ? singlesOffer() : null;
 
     state.rounds = [];
     state.waiting = [];
     state.resting = [];
     state.coverage = null;
 
-    if (players.length < per) {
+    if (players.length < per && !offer) {
       render();
       save();
       setStatus('ต้องมีผู้เล่นอย่างน้อย ' + per + ' คนสำหรับการแข่ง' + fmtLabel() + ' (ตอนนี้ ' + players.length + ' คน)', 'warn');
@@ -1780,7 +1847,7 @@
     }
 
     var rotating = state.plan === 'rotate';
-    var games = rotating ? rotationGames(players, per) : randomGames(players, per);
+    var games = rotating ? rotationGames(players, per) : randomGames(players, per, !!offer);
     games.forEach(recordMatch);
 
     state.rounds = chunkRounds(games, state.courts);
@@ -1817,12 +1884,18 @@
         state.coverage.done + '/' + state.coverage.total + ' คู่';
     } else {
       msg = 'สุ่มแล้ว ' + games.length + ' แมตช์ ใน ' + state.rounds.length + ' รอบ — แต่ละรอบชื่อไม่ซ้ำกัน';
+      if (offer && games.some(isSinglesMatch)) {
+        msg += ' · ' + (state.rounds.length > 1 ? 'รอบ ' + offer.round + ' ' : '') +
+          'สนาม ' + offer.court + ' เล่นเดี่ยว 1:1';
+      }
       if (state.resting.length) {
         msg += ' · ' + state.resting.length + ' คนพักชุดนี้ และจะได้ลงก่อนในการสุ่มครั้งถัดไป';
       }
     }
     var used = courtsUsed();
-    if (used < state.courts) {
+    // After a yes to the 1:1 court the question has already explained the head
+    // count, and "N people of doubles fill one court" would misdescribe it.
+    if (used < state.courts && !offer) {
       msg += ' · เปิดได้ ' + used + ' จาก ' + state.courts + ' สนาม — ' + players.length + ' คนแบบ' +
         fmtLabel() + ' ลงพร้อมกันได้ ' + used + ' สนาม (ครบ ' + state.courts + ' สนามต้องมี ' +
         (state.courts * per) + ' คนขึ้นไป)';
@@ -1840,7 +1913,15 @@
       forgetPairs(match);
       match.forEach(function (side) { people = people.concat(side); });
     });
-    var fresh = dealMatches(shuffled(people), perCourt());
+    // Keep the round's shape: a 1:1 court opened beside the doubles stays a 1:1
+    // court, and only who stands where is dealt again. Dealing all of them as
+    // doubles would drop the two who were on it.
+    var per = perCourt();
+    var singles = per === 4 ? round.filter(isSinglesMatch).length : 0;
+    var mixed = shuffled(people);
+    var cut = mixed.length - singles * 2;
+    var fresh = dealMatches(mixed.slice(0, cut), per)
+      .concat(singles ? dealMatches(mixed.slice(cut), 2) : []);
     fresh.forEach(recordPairs);
     state.rounds[index] = fresh;
     render();
@@ -1923,15 +2004,19 @@
     var no = document.createElement('span');
     no.className = 'court__no';
     no.textContent = 'สนาม ' + courtNo;
+    // Each court says what is played on it, which in a doubles draw with a 1:1
+    // court opened beside it is not always what the mode says.
+    var single = isSinglesMatch(match);
+    if (single && state.mode === 'doubles') card.classList.add('court--odd');
     var fmt = document.createElement('span');
     fmt.className = 'court__fmt';
-    fmt.textContent = state.mode === 'singles' ? '1:1' : '2:2';
+    fmt.textContent = single ? '1:1' : '2:2';
     head.appendChild(no);
     head.appendChild(fmt);
 
     var plan = document.createElement('div');
     plan.className = 'plan';
-    plan.setAttribute('data-fmt', state.mode);
+    plan.setAttribute('data-fmt', single ? 'singles' : 'doubles');
     // Behind the net and the names, so both sit on the chalk rather than under it.
     if (el.courtTpl && el.courtTpl.content) {
       plan.appendChild(el.courtTpl.content.cloneNode(true));
@@ -2277,12 +2362,14 @@
     var cap = courtCapacity();
     var n = state.players.length;
     if (!n) return 'จำนวนคนเป็นตัวกำหนดว่าเปิดได้จริงกี่สนาม — ' + per + ' คนต่อ 1 สนาม';
+    // Said up front, so the question after the button is not a surprise.
+    var odd = singlesOffer() ? ' · กดสุ่มแล้วเลือกให้คนที่เหลือเล่น 1:1 ได้' : '';
     if (cap < 1) {
-      return 'ยังเปิดสนามไม่ได้ — แบบ' + fmtLabel() + ' ต้องมีอย่างน้อย ' + per + ' คน (ตอนนี้ ' + n + ' คน)';
+      return 'ยังเปิดสนามไม่ได้ — แบบ' + fmtLabel() + ' ต้องมีอย่างน้อย ' + per + ' คน (ตอนนี้ ' + n + ' คน)' + odd;
     }
     if (cap < state.courts) {
       return n + ' คนแบบ' + fmtLabel() + ' ลงพร้อมกันได้ ' + cap + ' สนาม — ครบ ' + state.courts +
-        ' สนามต้องมี ' + (state.courts * per) + ' คนขึ้นไป';
+        ' สนามต้องมี ' + (state.courts * per) + ' คนขึ้นไป' + odd;
     }
     return 'รอบละ ' + state.courts + ' สนาม · ลงพร้อมกัน ' + (state.courts * per) + ' คน' +
       (n > state.courts * per ? ' · อีก ' + (n - state.courts * per) + ' คนรอคิว' : '');
@@ -2438,6 +2525,7 @@
     pressGroup(el.planSeg, 'data-plan', state.plan);
     clearDraw();
     syncPlanHint();
+    syncCourtHint(); // the 1:1 option exists in random draws only
     save();
     el.shuffle.textContent = drawLabel();
     render();
@@ -2457,13 +2545,75 @@
     if (state.players.length && cap < state.courts) {
       setStatus('ตั้งเป็น ' + state.courts + ' สนาม แต่ ' + state.players.length + ' คนแบบ' + fmtLabel() +
         ' ลงพร้อมกันได้ ' + cap + ' สนาม — ครบ ' + state.courts + ' สนามต้องมี ' +
-        (state.courts * perCourt()) + ' คนขึ้นไป', 'warn');
+        (state.courts * perCourt()) + ' คนขึ้นไป' +
+        (singlesOffer() ? ' · กดสุ่มแล้วเลือกให้คนที่เหลือเล่น 1:1 ได้' : ''), 'warn');
     } else {
       setStatus('ตั้งเป็น ' + state.courts + ' สนาม — กด' + drawLabel() + 'อีกครั้ง', 'ok');
     }
   });
 
-  el.shuffle.addEventListener('click', draw);
+  /* ---------- asking before a 1:1 court opens in a doubles draw ---------- */
+
+  var canAsk = !!(el.mixDlg && typeof el.mixDlg.showModal === 'function');
+
+  function offerText(o) {
+    var rest = o.rest ? ' (อีก ' + o.rest + ' คนพักรอบนี้)' : '';
+    if (!o.doubles) {
+      return {
+        title: 'คนไม่พอเล่นคู่ 2:2',
+        body: 'มี ' + o.players + ' คน ยังไม่พอลงคู่ 2:2 สักสนาม — จะให้เล่นแบบเดี่ยว 1:1 แทนมั้ย?' + rest,
+        no: 'ไม่ต้อง'
+      };
+    }
+    if (o.round === 1) {
+      return {
+        title: 'คนไม่พอเล่น 2:2 ครบ ' + state.courts + ' สนาม',
+        body: 'มี ' + o.players + ' คน ลงคู่ 2:2 ได้ ' + o.doubles + ' สนาม เหลืออีก ' + o.left +
+          ' คน — จะให้สนาม ' + o.court + ' เล่นแบบเดี่ยว 1:1 มั้ย?' + rest,
+        no: 'ไม่ต้อง ให้พัก'
+      };
+    }
+    return {
+      title: 'รอบสุดท้ายคนไม่พอเล่น 2:2',
+      body: 'มี ' + o.players + ' คน ลงคู่ 2:2 ได้ ' + o.doubles + ' แมตช์ รอบ ' + o.round +
+        ' ยังว่างสนาม ' + o.court + ' และเหลืออีก ' + o.left +
+        ' คน — จะให้สนามนั้นเล่นแบบเดี่ยว 1:1 มั้ย?' + rest,
+      no: 'ไม่ต้อง ให้พัก'
+    };
+  }
+
+  // The draw button. When the head count leaves a court empty and people over,
+  // ask first; otherwise draw straight away as before.
+  function requestDraw() {
+    var offer = singlesOffer();
+    if (!offer) { draw(false); return; }
+    var text = offerText(offer);
+    if (!canAsk) {
+      draw(window.confirm(text.title + '\n\n' + text.body));
+      return;
+    }
+    el.mixTitle.textContent = text.title;
+    el.mixBody.textContent = text.body;
+    el.mixNo.textContent = text.no;
+    el.mixDlg.showModal();
+  }
+
+  el.shuffle.addEventListener('click', requestDraw);
+
+  // Each answer draws from its own button, the way the wipe dialog does, rather
+  // than from the dialog's close event: that event is queued, not immediate,
+  // and does not arrive at all while the page is hidden. Escape just closes,
+  // so nothing is drawn and the board stands.
+  if (canAsk) {
+    el.mixYes.addEventListener('click', function () {
+      el.mixDlg.close();
+      draw(true);
+    });
+    el.mixNo.addEventListener('click', function () {
+      el.mixDlg.close();
+      draw(false);
+    });
+  }
 
   /* ---------- showing a press on a touchscreen ---------- */
 
