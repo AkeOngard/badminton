@@ -1049,6 +1049,29 @@
     text-align: center;
     overflow-wrap: anywhere;
   }
+  /* Every name on the board is a button: tap one, then tap another, and the
+     two change places. The lime ring is the same one the draw button wears. */
+  button.name {
+    font-family: var(--font-body);
+    -webkit-appearance: none;
+    appearance: none;
+    cursor: pointer;
+    transition: transform .12s ease, box-shadow .15s ease;
+  }
+  button.name:focus-visible {
+    outline: 2px solid var(--cta);
+    outline-offset: 2px;
+  }
+  .name[aria-pressed="true"] {
+    transform: translateY(-1px);
+    box-shadow: 0 0 0 2px var(--cta), 0 6px 14px rgba(0, 0, 0, .28);
+  }
+  .swaphint {
+    margin: 2px 0 0;
+    font-size: 12.5px;
+    line-height: 1.55;
+    color: var(--ink-3);
+  }
 
   /* ---------- dealing a fresh draw ---------- */
   @keyframes deal {
@@ -1090,11 +1113,23 @@
   }
 
   .waiting {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
     margin: 4px 0 0;
     font-size: 12.5px;
     line-height: 1.6;
     color: var(--ink-3);
     overflow-wrap: anywhere;
+  }
+  .waiting .name {
+    background: var(--chip);
+    border-color: var(--chip-edge);
+    color: var(--ink-2);
+    font-size: 12.5px;
+    font-weight: 400;
+    padding: 4px 11px;
   }
   .waiting b {
     font-family: var(--font-mono);
@@ -1434,6 +1469,9 @@
     waits: {}
   };
 
+  // The name tapped first, waiting for a second one to change places with.
+  var pick = null;
+
   var el = {
     names: document.getElementById('names'),
     nameCount: document.getElementById('nameCount'),
@@ -1494,6 +1532,41 @@
     state.waiting = [];
     state.resting = [];
     state.coverage = null;
+    pick = null;
+  }
+
+  function flatRounds() {
+    var out = [];
+    state.rounds.forEach(function (round) {
+      round.forEach(function (match) { out.push(match); });
+    });
+    return out;
+  }
+
+  function inMatch(match, name) {
+    return match[0].indexOf(name) >= 0 || match[1].indexOf(name) >= 0;
+  }
+
+  function playsInSet(name) {
+    return flatRounds().filter(function (m) { return inMatch(m, name); }).length;
+  }
+
+  // Who waits and who sits out follows from who is on court, so both lists are
+  // worked out from the rounds — after a draw, and again after a swap.
+  function syncSets() {
+    var players = state.players;
+    var playing = Object.create(null);
+    flatRounds().forEach(function (m) {
+      m[0].concat(m[1]).forEach(function (n) { playing[n] = true; });
+    });
+    state.resting = players.filter(function (n) { return !playing[n]; });
+    state.waiting = state.rounds.map(function (round) {
+      var here = Object.create(null);
+      round.forEach(function (m) {
+        m[0].concat(m[1]).forEach(function (n) { here[n] = true; });
+      });
+      return players.filter(function (n) { return playing[n] && !here[n]; });
+    });
   }
 
   function parseNames(raw) {
@@ -1834,10 +1907,7 @@
     var players = state.players;
     var offer = withSingles === true ? singlesOffer() : null;
 
-    state.rounds = [];
-    state.waiting = [];
-    state.resting = [];
-    state.coverage = null;
+    clearDraw();
 
     if (players.length < per && !offer) {
       render();
@@ -1852,26 +1922,16 @@
 
     state.rounds = chunkRounds(games, state.courts);
     state.coverage = coverageOf(games, players, per);
+    syncSets();
 
-    var everPlayed = Object.create(null);
-    games.forEach(function (g) {
-      g[0].concat(g[1]).forEach(function (n) { everPlayed[n] = true; });
-    });
-    state.resting = players.filter(function (n) { return !everPlayed[n]; });
+    var sittingOut = Object.create(null);
     state.resting.forEach(function (name) {
+      sittingOut[name] = true;
       state.rested[name] = (state.rested[name] || 0) + 1;
       state.waits[name] = (state.waits[name] || 0) + 1;
     });
     players.forEach(function (name) {
-      if (everPlayed[name]) state.waits[name] = 0;
-    });
-
-    state.waiting = state.rounds.map(function (round) {
-      var onCourt = Object.create(null);
-      round.forEach(function (g) {
-        g[0].concat(g[1]).forEach(function (n) { onCourt[n] = true; });
-      });
-      return players.filter(function (n) { return everPlayed[n] && !onCourt[n]; });
+      if (!sittingOut[name]) state.waits[name] = 0;
     });
 
     render();
@@ -1908,6 +1968,7 @@
   function redrawRound(index) {
     var round = state.rounds[index];
     if (!round) return;
+    pick = null; // the slots are about to be dealt again
     var people = [];
     round.forEach(function (match) {
       forgetPairs(match);
@@ -1931,10 +1992,7 @@
   }
 
   function resetAll() {
-    state.rounds = [];
-    state.waiting = [];
-    state.resting = [];
-    state.coverage = null;
+    clearDraw();
     state.played = {};
     state.rested = {};
     state.pairs = {};
@@ -1984,14 +2042,26 @@
     el.sumCourts.textContent = state.courts + ' สนาม';
   }
 
-  function nameChip(text) {
-    var s = document.createElement('span');
-    s.className = 'name';
-    s.textContent = text;
-    return s;
+  // A name is a button wherever it can be moved, and the spot it carries says
+  // which slot on the board it stands in.
+  function nameChip(text, spot) {
+    if (!spot) {
+      var s = document.createElement('span');
+      s.className = 'name';
+      s.textContent = text;
+      return s;
+    }
+    var b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'name';
+    b.textContent = text;
+    b.spot = spot;
+    b.title = 'แตะเพื่อสลับตัวกับอีกชื่อหนึ่ง';
+    b.setAttribute('aria-pressed', samePlace(pick, spot) ? 'true' : 'false');
+    return b;
   }
 
-  function courtCard(match, courtNo) {
+  function courtCard(match, courtNo, roundIdx) {
     var card = document.createElement('article');
     card.className = 'court';
     card.setAttribute('data-court', String(courtNo));
@@ -2031,7 +2101,11 @@
       }
       var box = document.createElement('div');
       box.className = 'side';
-      side.forEach(function (name) { box.appendChild(nameChip(name)); });
+      side.forEach(function (name, slot) {
+        box.appendChild(nameChip(name, {
+          at: 'court', r: roundIdx, c: courtNo - 1, s: idx, i: slot
+        }));
+      });
       plan.appendChild(box);
     });
 
@@ -2094,7 +2168,7 @@
       var courts = document.createElement('div');
       courts.className = 'courts';
       round.forEach(function (match, i) {
-        var card = courtCard(match, i + 1);
+        var card = courtCard(match, i + 1, idx);
         // Only the rounds anyone can see deal in; a long rotation would
         // otherwise animate dozens of cards nobody has scrolled to.
         if (idx < 3) {
@@ -2114,7 +2188,9 @@
         var lab = document.createElement('b');
         lab.textContent = 'รอคิว ' + waitingNames.length;
         wait.appendChild(lab);
-        wait.appendChild(document.createTextNode(waitingNames.join(' · ')));
+        waitingNames.forEach(function (name) {
+          wait.appendChild(nameChip(name, { at: 'wait', r: idx, name: name }));
+        });
         sec.appendChild(wait);
       }
 
@@ -2128,9 +2204,17 @@
       lab.className = 'rest__label';
       lab.textContent = 'พักชุดนี้ · ' + state.resting.length + ' คน';
       rest.appendChild(lab);
-      state.resting.forEach(function (name) { rest.appendChild(nameChip(name)); });
+      state.resting.forEach(function (name) {
+        rest.appendChild(nameChip(name, { at: 'rest', name: name }));
+      });
       wrap.appendChild(rest);
     }
+
+    var hint = document.createElement('p');
+    hint.className = 'swaphint';
+    hint.textContent = 'อยากเปลี่ยนตัวเอง — แตะชื่อหนึ่ง แล้วแตะอีกชื่อ สองคนนั้นจะสลับที่กัน ' +
+      'สลับกับคนที่รอคิวหรือพักอยู่ก็ได้ (กด Esc เพื่อยกเลิก)';
+    wrap.appendChild(hint);
 
     el.rounds.appendChild(wrap);
   }
@@ -2550,6 +2634,126 @@
     } else {
       setStatus('ตั้งเป็น ' + state.courts + ' สนาม — กด' + drawLabel() + 'อีกครั้ง', 'ok');
     }
+  });
+
+  /* ---------- changing people over after the draw ---------- */
+
+  function samePlace(a, b) {
+    if (!a || !b || a.at !== b.at) return false;
+    if (a.at === 'court') return a.r === b.r && a.c === b.c && a.s === b.s && a.i === b.i;
+    return a.name === b.name && a.r === b.r;
+  }
+
+  function nameAt(spot) {
+    return spot.at === 'court' ? state.rounds[spot.r][spot.c][spot.s][spot.i] : spot.name;
+  }
+
+  function onCourtInRound(roundIdx, name) {
+    return (state.rounds[roundIdx] || []).some(function (m) { return inMatch(m, name); });
+  }
+
+  // Nobody can stand on two courts in the same round, so a swap that would put
+  // a name twice into one round is refused and said out loud.
+  function swapTrouble(a, b) {
+    if (a.at !== 'court' && b.at !== 'court') {
+      return 'สลับได้เมื่อมีชื่อที่อยู่ในสนามอย่างน้อยหนึ่งชื่อ';
+    }
+    var an = nameAt(a);
+    var bn = nameAt(b);
+    if (an === bn) return 'เป็นคนเดียวกัน';
+    if (a.at === 'court' && b.at === 'court') {
+      if (a.r === b.r) return '';
+      if (onCourtInRound(a.r, bn)) return bn + ' ลงรอบ ' + (a.r + 1) + ' อยู่แล้ว สลับแล้วชื่อจะซ้ำกันในรอบเดียว';
+      if (onCourtInRound(b.r, an)) return an + ' ลงรอบ ' + (b.r + 1) + ' อยู่แล้ว สลับแล้วชื่อจะซ้ำกันในรอบเดียว';
+      return '';
+    }
+    var court = a.at === 'court' ? a : b;
+    var other = a.at === 'court' ? b : a;
+    if (onCourtInRound(court.r, nameAt(other))) {
+      return nameAt(other) + ' ลงรอบ ' + (court.r + 1) + ' อยู่แล้ว สลับแล้วชื่อจะซ้ำกันในรอบเดียว';
+    }
+    return '';
+  }
+
+  function swapPlaces(a, b) {
+    var an = nameAt(a);
+    var bn = nameAt(b);
+    var touched = [];
+    [a, b].forEach(function (spot) {
+      if (spot.at !== 'court') return;
+      var match = state.rounds[spot.r][spot.c];
+      if (touched.indexOf(match) < 0) touched.push(match);
+    });
+
+    var before = [playsInSet(an), playsInSet(bn)];
+    touched.forEach(forgetPairs);
+
+    if (a.at === 'court') state.rounds[a.r][a.c][a.s][a.i] = bn;
+    if (b.at === 'court') state.rounds[b.r][b.c][b.s][b.i] = an;
+
+    touched.forEach(recordPairs);
+    var after = [playsInSet(an), playsInSet(bn)];
+
+    // Only the two names moved, so the tallies move by exactly what changed.
+    [an, bn].forEach(function (name, i) {
+      var delta = after[i] - before[i];
+      if (delta) state.played[name] = Math.max(0, (state.played[name] || 0) + delta);
+      if (before[i] > 0 && after[i] === 0) {
+        state.rested[name] = (state.rested[name] || 0) + 1;
+        state.waits[name] = (state.waits[name] || 0) + 1;
+      } else if (before[i] === 0 && after[i] > 0) {
+        state.rested[name] = Math.max(0, (state.rested[name] || 0) - 1);
+        state.waits[name] = 0;
+      }
+    });
+
+    syncSets();
+    state.coverage = coverageOf(flatRounds(), state.players, perCourt());
+    render();
+    save();
+    setStatus('สลับ ' + an + ' กับ ' + bn + ' แล้ว — สถิติลง/พักปรับตามให้เรียบร้อย', 'ok');
+  }
+
+  function paintPick() {
+    Array.prototype.forEach.call(el.rounds.querySelectorAll('button.name'), function (b) {
+      b.setAttribute('aria-pressed', samePlace(pick, b.spot) ? 'true' : 'false');
+    });
+  }
+
+  function chooseChip(spot) {
+    if (!pick) {
+      pick = spot;
+      paintPick();
+      setStatus('เลือก ' + nameAt(spot) + ' ไว้แล้ว — แตะอีกชื่อเพื่อสลับที่กัน (Esc เพื่อยกเลิก)', 'ok');
+      return;
+    }
+    if (samePlace(pick, spot)) {
+      pick = null;
+      paintPick();
+      setStatus('ยกเลิกการเลือกแล้ว', 'ok');
+      return;
+    }
+    var trouble = swapTrouble(pick, spot);
+    if (trouble) {
+      setStatus(trouble, 'warn'); // the first pick stands, so another target works
+      return;
+    }
+    var from = pick;
+    pick = null;
+    swapPlaces(from, spot);
+  }
+
+  el.rounds.addEventListener('click', function (e) {
+    var chip = e.target.closest('button.name');
+    if (!chip || !chip.spot) return;
+    chooseChip(chip.spot);
+  });
+
+  document.addEventListener('keydown', function (e) {
+    if (e.key !== 'Escape' || !pick) return;
+    pick = null;
+    paintPick();
+    setStatus('ยกเลิกการเลือกแล้ว', 'ok');
   });
 
   /* ---------- asking before a 1:1 court opens in a doubles draw ---------- */
