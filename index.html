@@ -1,4 +1,28 @@
 <meta charset="utf-8">
+<!-- Installed on a phone, this is a real app on the device: its own origin,
+     its own service worker, its own storage. That makes it worth saying out
+     loud what the app is allowed to do, so a script that ever got in could
+     not phone home or pull code from anywhere. The app fetches nothing at
+     runtime, so connect-src is none; the only outside origin it wants is the
+     font CDN. Inline script and style are allowed because the whole app is
+     written inline here and there is no build step to hash it. -->
+<meta http-equiv="Content-Security-Policy" content="
+  default-src 'self';
+  script-src 'self' 'unsafe-inline';
+  style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+  font-src 'self' https://fonts.gstatic.com;
+  img-src 'self' data:;
+  connect-src 'none';
+  manifest-src 'self';
+  worker-src 'self';
+  object-src 'none';
+  frame-src 'none';
+  base-uri 'none';
+  form-action 'none'
+">
+<!-- The font CDN is the one request that leaves the device; it does not need
+     to be told which page asked. -->
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <!-- viewport-fit=cover is what makes env(safe-area-inset-*) report anything
      at all on iOS; without it the installed app runs its board under the
      home indicator and the status bar. -->
