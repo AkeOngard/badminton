@@ -1548,11 +1548,15 @@
   .boot--quick .intro,
   html:not(.boot) .intro { display: none; }
   /* And the page itself goes green while it plays, so a bounce or a gap past
-     the overlay's edge shows more green rather than the light board. */
+     the overlay's edge shows more green rather than the light board. It's
+     the shade the vignette reaches at the overlay's bottom edge (#0E5142
+     under 22% black), not the plain green: an installed app on iOS can leave
+     a strip under the overlay above the home indicator, and a plain green
+     there shows as a lighter band. */
   @media (prefers-reduced-motion: no-preference) {
     html.boot:not(.boot--quick):not(.boot--go),
     html.boot:not(.boot--quick):not(.boot--go) body {
-      background: #0E5142;
+      background: #0B3F33;
       overflow: hidden;
       overscroll-behavior: none;
     }
