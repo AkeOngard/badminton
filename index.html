@@ -71,6 +71,12 @@
     --mat-2: #1D4E7C;
     --mat-3: #6B2B40;
     --mat-4: #3B3B74;
+    /* Each court's colour as a small mark beside its name. In light mode it is
+       the mat itself; dark mode lifts it, or court 1 vanishes into its card. */
+    --pip-1: #14584A;
+    --pip-2: #1D4E7C;
+    --pip-3: #6B2B40;
+    --pip-4: #3B3B74;
     --court-ink: #F4F9F3;
     /* The chalk on the mat. Dark mode dims both, so a phone in a gym at night
        is not two bright white rectangles. */
@@ -80,6 +86,10 @@
     --name-fill: rgba(5, 28, 23, .4);
     --name-line: rgba(244, 249, 243, .36);
     --accent: #0E5142;
+    /* --accent fills things; this one is for words and rings. The same green
+       in light mode, they part in dark, where a fill-strength green used as
+       text measured 3:1 against the glass. */
+    --accent-text: #0E5142;
     --accent-ink: #F4F9F3;
     --accent-soft: #E7EFE6;
     --accent-line: #BFD3C6;
@@ -108,6 +118,9 @@
     --glass-edge: rgba(14, 40, 33, .14);
     --glass-lift: 0 12px 32px rgba(14, 40, 33, .16), 0 2px 6px rgba(14, 40, 33, .09);
     --glass-blur: blur(20px) saturate(180%);
+    /* Light catching the top of a pane and gone before its middle: the thing
+       that makes a pane read as glass rather than as a white card. */
+    --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, .6), rgba(255, 255, 255, 0) 42%);
     --recess: rgba(14, 40, 33, .09);
     --chip: rgba(255, 255, 255, .62);
     --chip-edge: rgba(14, 40, 33, .16);
@@ -138,6 +151,10 @@
       --mat-2: #173D5C;
       --mat-3: #5A2134;
       --mat-4: #2F3060;
+      --pip-1: #2E8C76;
+      --pip-2: #3D7FB8;
+      --pip-3: #B0587A;
+      --pip-4: #7A7BD0;
       --court-ink: #F4F9F3;
       --chalk: rgba(244, 249, 243, .5);
       --chalk-soft: rgba(244, 249, 243, .2);
@@ -147,6 +164,7 @@
       /* A green this deep would sink into the dark ground, so the selected
          segment and the links lift to a green that still reads as the same one. */
       --accent: #2E7A68;
+      --accent-text: #7FD4BC;
       --accent-ink: #F4F9F3;
       --accent-soft: #16332C;
       --accent-line: #2F6355;
@@ -166,6 +184,7 @@
       --glass-edge: rgba(255, 255, 255, .09);
       --glass-lift: 0 12px 34px rgba(0, 0, 0, .45), 0 2px 8px rgba(0, 0, 0, .3);
       --glass-blur: blur(22px) saturate(160%);
+      --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 42%);
       --recess: rgba(0, 0, 0, .28);
       --chip: rgba(255, 255, 255, .08);
       --chip-edge: rgba(255, 255, 255, .15);
@@ -188,6 +207,10 @@
     --mat-2: #173D5C;
     --mat-3: #5A2134;
     --mat-4: #2F3060;
+    --pip-1: #2E8C76;
+    --pip-2: #3D7FB8;
+    --pip-3: #B0587A;
+    --pip-4: #7A7BD0;
     --court-ink: #F4F9F3;
     --chalk: rgba(244, 249, 243, .5);
     --chalk-soft: rgba(244, 249, 243, .2);
@@ -197,6 +220,7 @@
     /* A green this deep would sink into the dark ground, so the selected
        segment and the links lift to a green that still reads as the same one. */
     --accent: #2E7A68;
+    --accent-text: #7FD4BC;
     --accent-ink: #F4F9F3;
     --accent-soft: #16332C;
     --accent-line: #2F6355;
@@ -216,6 +240,7 @@
     --glass-edge: rgba(255, 255, 255, .09);
     --glass-lift: 0 12px 34px rgba(0, 0, 0, .45), 0 2px 8px rgba(0, 0, 0, .3);
     --glass-blur: blur(22px) saturate(160%);
+    --glass-sheen: linear-gradient(180deg, rgba(255, 255, 255, .07), rgba(255, 255, 255, 0) 42%);
     --recess: rgba(0, 0, 0, .28);
     --chip: rgba(255, 255, 255, .08);
     --chip-edge: rgba(255, 255, 255, .15);
@@ -276,6 +301,7 @@
   .empty,
   .modal {
     background: var(--glass);
+    background-image: var(--glass-sheen);
     -webkit-backdrop-filter: var(--glass-blur);
     backdrop-filter: var(--glass-blur);
     border: 0;
@@ -398,7 +424,7 @@
     cursor: pointer;
   }
   .icon-btn:hover { color: var(--ink); background: var(--glass-2); }
-  .icon-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .icon-btn:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
   .icon-btn svg { width: 18px; height: 18px; }
 
   /* Which half of the toggle to show: the mode you would switch TO. */
@@ -495,10 +521,10 @@
     align-items: center;
     gap: 4px;
     font-size: 13px;
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .setupbar:focus-visible, .disclose:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
   .chev { transition: transform .18s ease; }
@@ -526,7 +552,7 @@
     font-family: var(--font-display);
     font-size: 14.5px;
     font-weight: 700;
-    color: var(--accent);
+    color: var(--accent-text);
   }
   .disclose__val:empty { display: none; }
 
@@ -574,13 +600,13 @@
   textarea::placeholder { color: var(--ink-3); }
 
   textarea:focus-visible, button:focus-visible {
-    outline: 2px solid var(--accent);
+    outline: 2px solid var(--accent-text);
     outline-offset: 2px;
   }
   .hint { margin: 0; font-size: 12.5px; color: var(--ink-3); }
 
   /* A court count the head count cannot fill yet — still selectable, just muted. */
-  .segment button[data-over="true"] { opacity: .45; }
+  .segment button[data-over="true"] { opacity: .62; }
 
   .segment {
     position: relative;
@@ -707,7 +733,7 @@
     height: 44px;
     padding: 0 15px;
     border-radius: 100px;
-    color: var(--accent);
+    color: var(--accent-text);
     font-family: var(--font-body);
     font-size: 13.5px;
     font-weight: 500;
@@ -740,6 +766,7 @@
       padding: 7px;
       border-radius: 29px;
       background: var(--glass-2);
+      background-image: var(--glass-sheen);
       -webkit-backdrop-filter: var(--glass-blur);
       backdrop-filter: var(--glass-blur);
       box-shadow:
@@ -868,7 +895,7 @@
   }
   .fee__row input::-webkit-outer-spin-button,
   .fee__row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-  .fee__row input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .fee__row input:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
   .fee__unit { font-size: 12px; color: var(--ink-3); }
   .fee__out {
     display: flex;
@@ -931,14 +958,14 @@
   .mini-btn {
     font-family: var(--font-body);
     font-size: 13px;
-    color: var(--accent);
+    color: var(--accent-text);
     border-radius: 100px;
     padding: 0 14px;
     min-height: 40px;
     cursor: pointer;
   }
   .mini-btn:hover { color: var(--ink); background: var(--glass-2); }
-  .mini-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .mini-btn:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
 
   .courts {
     display: grid;
@@ -950,6 +977,7 @@
   /* Each court keeps its own mat colour, the way a club numbers its courts. */
   .court {
     --mat: var(--mat-1);
+    --pip: var(--pip-1);
     display: flex;
     flex-direction: column;
     gap: 9px;
@@ -957,9 +985,9 @@
     border-radius: calc(var(--r-sm) + 9px);
     padding: 10px 10px 12px;
   }
-  .court[data-court="2"] { --mat: var(--mat-2); }
-  .court[data-court="3"] { --mat: var(--mat-3); }
-  .court[data-court="4"] { --mat: var(--mat-4); }
+  .court[data-court="2"] { --mat: var(--mat-2); --pip: var(--pip-2); }
+  .court[data-court="3"] { --mat: var(--mat-3); --pip: var(--pip-3); }
+  .court[data-court="4"] { --mat: var(--mat-4); --pip: var(--pip-4); }
 
   .court__head {
     display: flex;
@@ -972,7 +1000,7 @@
     width: 9px;
     height: 9px;
     border-radius: 3px;
-    background: var(--mat);
+    background: var(--pip);
   }
   .court__no {
     font-family: var(--font-display);
@@ -1054,11 +1082,10 @@
     padding: 8px 12px;
     min-width: 0;
   }
-  .side .name {
-    -webkit-backdrop-filter: blur(6px) saturate(140%);
-    backdrop-filter: blur(6px) saturate(140%);
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22);
-  }
+  /* Lit like glass, but not blurred: the mat under a chip is one flat colour,
+     so a blur there costs a compositing layer per name and changes nothing.
+     A sixteen-name board was running twenty-five of them. */
+  .side .name { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22); }
   .name {
     display: block;
     max-width: 100%;
@@ -1168,12 +1195,40 @@
     display: flex;
     flex-direction: column;
     gap: 7px;
-    padding: 30px 24px;
+    padding: 12px 12px 26px;
     text-align: center;
     color: var(--ink-2);
     border-radius: var(--r-lg);
     line-height: 1.7;
   }
+  .empty__art {
+    position: relative;
+    display: grid;
+    place-items: center;
+    aspect-ratio: 2.2 / 1;
+    margin: 0 0 10px;
+    border-radius: var(--r-md);
+    background: var(--mat-1);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
+    overflow: hidden;
+  }
+  /* Only the ghost of a court: the lines are there to say what this is, not
+     to be read. */
+  .empty__art .lines path { stroke: var(--chalk-soft); stroke-width: 1; }
+  .empty__shuttle {
+    position: relative;
+    width: 26%;
+    max-width: 112px;
+    height: auto;
+    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .3));
+    animation: hover 3.2s ease-in-out infinite;
+  }
+  @keyframes hover {
+    0%, 100% { transform: translateY(3px) rotate(-4deg); }
+    50% { transform: translateY(-5px) rotate(3deg); }
+  }
+  .empty > b,
+  .empty > span { padding: 0 12px; }
   .empty b {
     font-family: var(--font-display);
     font-size: 18px;
@@ -1182,7 +1237,8 @@
   }
 
   .footnote {
-    margin: 6px 0 0;
+    margin: 0;
+    line-height: 1.6;
     font-size: 12px;
     color: var(--ink-3);
     font-variant-numeric: tabular-nums;
@@ -1414,6 +1470,8 @@
             </div>
             <ul class="stat-list" id="stats"></ul>
           </div>
+
+          <p class="footnote">ผังสนามวาดตามสัดส่วนมาตรฐาน BWF 13.40 × 6.10 ม. · เส้นเสิร์ฟสั้น 1.98 ม. จากตาข่าย · เส้นในคือขอบสนามเดี่ยว (กว้าง 5.18 ม.)</p>
         </div>
       </aside>
     </div>
@@ -1421,13 +1479,25 @@
     <section class="board">
       <p class="status" id="status" role="status"></p>
       <div id="rounds"></div>
-      <p class="footnote">ผังสนามวาดตามสัดส่วนมาตรฐาน BWF 13.40 × 6.10 ม. · เส้นเสิร์ฟสั้น 1.98 ม. จากตาข่าย · เส้นในคือขอบสนามเดี่ยว (กว้าง 5.18 ม.)</p>
     </section>
   </div>
 </div>
 
 <!-- The court, to BWF's dimensions, one unit per centimetre: 13.40 × 6.10 m
      of court centred in 0.46 m of floor. Every card clones this. -->
+<!-- The shuttle that floats over an empty court before the first draw. -->
+<template id="emptyShuttle">
+  <svg class="empty__shuttle" viewBox="0 0 48 48" aria-hidden="true" focusable="false">
+    <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M10.5 10.5 L17.5 32.5 M37.5 10.5 L30.5 32.5 M10.5 10.5 Q24 3.5 37.5 10.5"
+            stroke="#D9F25C" stroke-width="2.2" />
+      <path d="M17.8 8.6 L20.8 32.5 M24 7 L24 32.5 M30.2 8.6 L27.2 32.5 M13.6 21 Q24 25.4 34.4 21"
+            stroke="#D9F25C" stroke-width="1.2" opacity=".6" />
+    </g>
+    <path d="M17.5 31.8 h13 a6.5 6.5 0 0 1 -13 0 z" fill="#D9F25C" />
+  </svg>
+</template>
+
 <template id="courtLines">
   <svg class="lines" viewBox="0 0 1544 702" preserveAspectRatio="xMidYMid meet" aria-hidden="true" focusable="false">
     <!-- back boundary, both ends -->
@@ -1533,7 +1603,8 @@
     extrasToggle: document.getElementById('extrasToggle'),
     extrasBody: document.getElementById('extrasBody'),
     extrasVal: document.getElementById('extrasVal'),
-    courtTpl: document.getElementById('courtLines')
+    courtTpl: document.getElementById('courtLines'),
+    shuttleTpl: document.getElementById('emptyShuttle')
   };
 
   /* ---------- helpers ---------- */
@@ -2151,6 +2222,16 @@
       say.textContent = state.players.length
         ? 'กดปุ่ม “' + drawLabel() + '” แล้วจะจัดคนลงสนามให้ทุกรอบ ชื่อไม่ซ้ำกัน'
         : 'พิมพ์หรือวางรายชื่อจากแชทก๊วน เลือกเดี่ยวหรือคู่และจำนวนสนาม แล้วกด “' + drawLabel() + '”';
+      // An empty court with the shuttle waiting over it: the first thing a new
+      // club sees should look like the app, not like a message about it.
+      if (el.courtTpl && el.courtTpl.content && el.shuttleTpl && el.shuttleTpl.content) {
+        var art = document.createElement('div');
+        art.className = 'empty__art';
+        art.setAttribute('aria-hidden', 'true');
+        art.appendChild(el.courtTpl.content.cloneNode(true));
+        art.appendChild(el.shuttleTpl.content.cloneNode(true));
+        empty.appendChild(art);
+      }
       empty.appendChild(lead);
       empty.appendChild(say);
       el.rounds.appendChild(empty);
@@ -2582,7 +2663,7 @@
     thumb.style.transform = 'translate(' + btn.offsetLeft + 'px, ' + btn.offsetTop + 'px)';
     // A court count the head count cannot fill yet is dimmed; the pill dims with
     // it, the way the button's own background used to.
-    thumb.style.opacity = btn.getAttribute('data-over') === 'true' ? '.45' : '1';
+    thumb.style.opacity = btn.getAttribute('data-over') === 'true' ? '.62' : '1';
   }
 
   // Placing the pill for the first time, or after the row has been resized, is
