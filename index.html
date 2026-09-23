@@ -32,6 +32,48 @@
 <link rel="icon" href="icon-192.png" sizes="192x192" type="image/png">
 <!-- iOS ignores SVG and data: URIs on the home screen, so it needs a real PNG. -->
 <link rel="apple-touch-icon" href="icon-180.png">
+<!-- What iOS shows while an installed app starts, instead of a white screen.
+     It picks one only by exact width, height and pixel ratio, so every current
+     iPhone is listed; a size missing here falls back to white. -->
+<!-- iPhone 16 Pro Max, 17 Pro Max -->
+<link rel="apple-touch-startup-image" href="splash/splash-1320x2868.png"
+      media="(device-width: 440px) and (device-height: 956px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone Air -->
+<link rel="apple-touch-startup-image" href="splash/splash-1260x2736.png"
+      media="(device-width: 420px) and (device-height: 912px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone 16 Pro, 17, 17 Pro -->
+<link rel="apple-touch-startup-image" href="splash/splash-1206x2622.png"
+      media="(device-width: 402px) and (device-height: 874px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone 14 Pro Max, 15 Plus, 15 Pro Max, 16 Plus -->
+<link rel="apple-touch-startup-image" href="splash/splash-1290x2796.png"
+      media="(device-width: 430px) and (device-height: 932px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone 14 Pro, 15, 15 Pro, 16 -->
+<link rel="apple-touch-startup-image" href="splash/splash-1179x2556.png"
+      media="(device-width: 393px) and (device-height: 852px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone 12 Pro Max, 13 Pro Max, 14 Plus -->
+<link rel="apple-touch-startup-image" href="splash/splash-1284x2778.png"
+      media="(device-width: 428px) and (device-height: 926px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone 12, 12 Pro, 13, 13 Pro, 14 -->
+<link rel="apple-touch-startup-image" href="splash/splash-1170x2532.png"
+      media="(device-width: 390px) and (device-height: 844px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone X, XS, 11 Pro, 12 mini, 13 mini -->
+<link rel="apple-touch-startup-image" href="splash/splash-1125x2436.png"
+      media="(device-width: 375px) and (device-height: 812px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone XS Max, 11 Pro Max -->
+<link rel="apple-touch-startup-image" href="splash/splash-1242x2688.png"
+      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone XR, 11 -->
+<link rel="apple-touch-startup-image" href="splash/splash-828x1792.png"
+      media="(device-width: 414px) and (device-height: 896px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<!-- iPhone 6s Plus, 7 Plus, 8 Plus -->
+<link rel="apple-touch-startup-image" href="splash/splash-1242x2208.png"
+      media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3) and (orientation: portrait)">
+<!-- iPhone 6s, 7, 8, SE 2nd and 3rd gen -->
+<link rel="apple-touch-startup-image" href="splash/splash-750x1334.png"
+      media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
+<!-- iPhone SE 1st gen -->
+<link rel="apple-touch-startup-image" href="splash/splash-640x1136.png"
+      media="(device-width: 320px) and (device-height: 568px) and (-webkit-device-pixel-ratio: 2) and (orientation: portrait)">
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="mobile-web-app-capable" content="yes">
 <!-- iOS has no install prompt: this is what makes a home-screen launch open
@@ -98,6 +140,7 @@
     /* The band across the top. It stays deep in both modes: it is the thing
        the white status bar text has to be readable against. */
     --brandbar: #0E5142;
+    --brandbar-glass: rgba(14, 81, 66, .8);
     --cta: #D9F25C;
     --cta-press: #C2DE45;
     --cta-ink: #0B3A2F;
@@ -129,6 +172,11 @@
     --font-display: 'Chakra Petch', 'IBM Plex Sans Thai', system-ui, sans-serif;
     --font-body: 'IBM Plex Sans Thai', 'Noto Sans Thai', system-ui, sans-serif;
     --font-mono: 'IBM Plex Mono', ui-monospace, 'Courier New', monospace;
+
+    /* Grain, once for the page behind the glass and once, heavier, for the
+       mats, which read as painted boards without it. */
+    --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)' opacity='.06'/%3E%3C/svg%3E");
+    --grain-mat: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)' opacity='.16'/%3E%3C/svg%3E");
 
     --r-sm: 12px;
     --r-md: 16px;
@@ -169,6 +217,7 @@
       --accent-soft: #16332C;
       --accent-line: #2F6355;
       --brandbar: #0D3A30;
+      --brandbar-glass: rgba(13, 58, 48, .84);
       --cta: #D9F25C;
       --cta-press: #BCD93F;
       --cta-ink: #0B3A2F;
@@ -225,6 +274,7 @@
     --accent-soft: #16332C;
     --accent-line: #2F6355;
     --brandbar: #0D3A30;
+    --brandbar-glass: rgba(13, 58, 48, .84);
     --cta: #D9F25C;
     --cta-press: #BCD93F;
     --cta-ink: #0B3A2F;
@@ -290,7 +340,7 @@
     inset: 0;
     z-index: -1;
     pointer-events: none;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='g'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23g)' opacity='.06'/%3E%3C/svg%3E");
+    background-image: var(--grain);
     background-size: 180px 180px;
   }
 
@@ -298,7 +348,6 @@
      One recipe for everything that floats above the board. */
   .panel,
   .court,
-  .empty,
   .modal {
     background: var(--glass);
     background-image: var(--glass-sheen);
@@ -328,6 +377,7 @@
     :root {
       --glass: var(--surface);
       --glass-2: var(--surface-2);
+      --brandbar-glass: var(--brandbar);
     }
   }
 
@@ -365,6 +415,51 @@
     z-index: 40;
     pointer-events: none;
   }
+  /* Scrolled past the band, a slim pane of the same green takes its place and
+     the board slides under it. Tapping it goes back to the top. */
+  .minibar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 41;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-left: max(16px, env(safe-area-inset-left, 0px));
+    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    background: var(--brandbar-glass);
+    -webkit-backdrop-filter: blur(18px) saturate(170%);
+    backdrop-filter: blur(18px) saturate(170%);
+    transform: translateY(-100%);
+    transition: transform .32s cubic-bezier(.45, .75, .2, 1), box-shadow .32s ease;
+  }
+  .minibar--on {
+    transform: none;
+    box-shadow:
+      inset 0 -1px 0 rgba(255, 255, 255, .1),
+      0 6px 20px rgba(9, 32, 26, .22);
+  }
+  .minibar__top {
+    max-width: 1140px;
+    height: 48px;
+    margin: 0 auto;
+    padding: 0;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    background: none;
+    border: 0;
+    color: #F4F9F3;
+    font-family: var(--font-display);
+    font-size: 16px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .minibar__top:focus-visible { outline: 2px solid var(--cta); outline-offset: -2px; }
+  .minibar .mark { width: 22px; height: 22px; }
+
   .masthead__in {
     max-width: 1140px;
     margin: 0 auto;
@@ -453,7 +548,7 @@
     flex-direction: column;
     gap: 14px;
     position: sticky;
-    top: 20px;
+    top: 64px; /* clear of the collapsed band once it is showing */
   }
   .panel {
     display: flex;
@@ -943,10 +1038,35 @@
     gap: 12px;
   }
   .round__no {
-    font-family: var(--font-display);
-    font-size: 17px;
-    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     margin: 0;
+    font-family: var(--font-display);
+    font-size: 13px;
+    font-weight: 600;
+    letter-spacing: .02em;
+    color: var(--ink-3);
+  }
+  /* The number on a scoreboard: the band's green with the draw button's lime,
+     so eleven rounds of a rotation can be told apart at a glance. */
+  .round__badge {
+    min-width: 32px;
+    height: 32px;
+    padding: 0 8px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 100px;
+    background: var(--brandbar);
+    color: var(--cta);
+    font-size: 16px;
+    font-weight: 700;
+    letter-spacing: 0;
+    font-variant-numeric: tabular-nums;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .18),
+      0 3px 10px rgba(9, 32, 26, .22);
   }
   .round__meta {
     font-family: var(--font-mono);
@@ -1029,7 +1149,11 @@
     position: relative;
     aspect-ratio: 2.2 / 1;
     min-height: 132px;
-    background: var(--mat);
+    background-color: var(--mat);
+    background-image:
+      var(--grain-mat),
+      radial-gradient(120% 95% at 50% 38%, rgba(255, 255, 255, .06), rgba(0, 0, 0, .22) 100%);
+    background-size: 150px 150px, 100% 100%;
     border-radius: var(--r-sm);
     padding: 9px;
     display: grid;
@@ -1071,17 +1195,26 @@
         transparent calc(50% + 1px)),
       repeating-linear-gradient(0deg, var(--chalk-soft) 0 2px, transparent 2px 6px);
   }
+  /* A half of the court is two rows, split where the centre line is. A single
+     player stands in the middle of their half; a pair stands one up by the
+     short service line and one back, and the pair across the net is the same
+     shape turned half a turn, the way the formation looks from the gallery. */
   .side {
     position: relative;
     z-index: 1;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
+    display: grid;
+    grid-auto-rows: 1fr;
     align-items: center;
-    gap: 7px;
-    padding: 8px 12px;
+    justify-items: center;
+    padding: 4px 6px;
     min-width: 0;
   }
+  .side .name:first-child:nth-last-child(2) { justify-self: end; }
+  .side .name:last-child:nth-child(2) { justify-self: start; }
+  .side--a .name:first-child:nth-last-child(2) { margin-right: 13%; }
+  .side--a .name:last-child:nth-child(2) { margin-left: 5%; }
+  .side--b .name:first-child:nth-last-child(2) { margin-right: 5%; }
+  .side--b .name:last-child:nth-child(2) { margin-left: 13%; }
   /* Lit like glass, but not blurred: the mat under a chip is one flat colour,
      so a blur there costs a compositing layer per name and changes nothing.
      A sixteen-name board was running twenty-five of them. */
@@ -1133,6 +1266,47 @@
     animation: deal .34s cubic-bezier(.2, .75, .3, 1) backwards;
     animation-delay: calc(var(--i, 0) * 70ms);
   }
+  /* A draw is the start of something: the shuttle turns over once and the
+     button sends out a ring of its own lime. */
+  .mark--spin { animation: spin .72s cubic-bezier(.45, .75, .2, 1); }
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    70% { transform: rotate(372deg); }
+    100% { transform: rotate(360deg); }
+  }
+  .btn--primary.cta--flash { animation: cta-flash .7s ease-out; }
+  @keyframes cta-flash {
+    0% {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .5),
+        inset 0 0 0 1px rgba(11, 58, 47, .1),
+        0 8px 22px var(--cta-glow),
+        0 0 0 0 rgba(217, 242, 92, .7);
+    }
+    100% {
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .5),
+        inset 0 0 0 1px rgba(11, 58, 47, .1),
+        0 8px 22px var(--cta-glow),
+        0 0 0 16px rgba(217, 242, 92, 0);
+    }
+  }
+
+  /* A name changing places flies there: a copy crosses over the board, above
+     every pane, while the real chip waits unseen in its new place. */
+  .ghost {
+    position: fixed;
+    z-index: 60;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    white-space: nowrap;
+    overflow: hidden;
+    pointer-events: none;
+    box-sizing: border-box;
+  }
+
   @keyframes land {
     0% { transform: scale(1.08); }
     55% { transform: scale(.985); }
@@ -1191,7 +1365,17 @@
     margin-right: 6px;
   }
 
+  /* Glass to look at, but no blur behind it. The shuttle hovers inside this
+     card without end, and a backdrop blur around a moving child is redone
+     every frame: it held the court-count pill back a beat on every tap
+     before the first draw. Over the flat page there was nothing to blur. */
   .empty {
+    background: var(--glass-2);
+    background-image: var(--glass-sheen);
+    box-shadow:
+      inset 0 1px 0 var(--glass-rim),
+      inset 0 0 0 1px var(--glass-edge),
+      var(--glass-lift);
     display: flex;
     flex-direction: column;
     gap: 7px;
@@ -1208,19 +1392,39 @@
     aspect-ratio: 2.2 / 1;
     margin: 0 0 10px;
     border-radius: var(--r-md);
-    background: var(--mat-1);
+    background-color: var(--mat-1);
+    background-image:
+      var(--grain-mat),
+      radial-gradient(120% 95% at 50% 38%, rgba(255, 255, 255, .06), rgba(0, 0, 0, .22) 100%);
+    background-size: 150px 150px, 100% 100%;
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .14);
     overflow: hidden;
   }
   /* Only the ghost of a court: the lines are there to say what this is, not
      to be read. */
   .empty__art .lines path { stroke: var(--chalk-soft); stroke-width: 1; }
+  /* The shuttle's shadow falls on the court and stays put while the shuttle
+     bobs: a filter on the moving shuttle itself would repaint every frame,
+     which held up everything else on the page by a noticeable beat. */
+  .empty__art::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    top: 64%;
+    width: 18%;
+    height: 9%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(closest-side, rgba(0, 0, 0, .34), rgba(0, 0, 0, 0));
+    pointer-events: none;
+  }
   .empty__shuttle {
     position: relative;
+    z-index: 1;
     width: 26%;
     max-width: 112px;
     height: auto;
-    filter: drop-shadow(0 8px 16px rgba(0, 0, 0, .3));
+    will-change: transform;
     animation: hover 3.2s ease-in-out infinite;
   }
   @keyframes hover {
@@ -1312,6 +1516,23 @@
 </style>
 
 <div class="statusbar" aria-hidden="true"></div>
+
+<!-- The band, collapsed: shown once the full one has scrolled away. -->
+<div class="minibar" id="minibar" aria-hidden="true">
+  <button type="button" class="minibar__top" id="toTop" tabindex="-1"
+          aria-label="สุ่มคู่ลงสนาม — กลับขึ้นบนสุด">
+    <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.5 10.5 L17.5 32.5 M37.5 10.5 L30.5 32.5 M10.5 10.5 Q24 3.5 37.5 10.5"
+              stroke="#D9F25C" stroke-width="2.4" />
+        <path d="M17.8 8.6 L20.8 32.5 M24 7 L24 32.5 M30.2 8.6 L27.2 32.5 M13.6 21 Q24 25.4 34.4 21"
+              stroke="#D9F25C" stroke-width="1.4" opacity=".5" />
+      </g>
+      <path d="M17.5 31.8 h13 a6.5 6.5 0 0 1 -13 0 z" fill="#D9F25C" />
+    </svg>
+    สุ่มคู่ลงสนาม
+  </button>
+</div>
 
 <header class="masthead">
   <div class="masthead__in">
@@ -1604,7 +1825,10 @@
     extrasBody: document.getElementById('extrasBody'),
     extrasVal: document.getElementById('extrasVal'),
     courtTpl: document.getElementById('courtLines'),
-    shuttleTpl: document.getElementById('emptyShuttle')
+    shuttleTpl: document.getElementById('emptyShuttle'),
+    masthead: document.querySelector('.masthead'),
+    minibar: document.getElementById('minibar'),
+    toTop: document.getElementById('toTop')
   };
 
   /* ---------- helpers ---------- */
@@ -2031,6 +2255,7 @@
 
     render();
     animateDraw();
+    celebrate();
 
     var msg;
     if (rotating) {
@@ -2195,7 +2420,7 @@
         plan.appendChild(net);
       }
       var box = document.createElement('div');
-      box.className = 'side';
+      box.className = 'side side--' + (idx ? 'b' : 'a');
       side.forEach(function (name, slot) {
         box.appendChild(nameChip(name, {
           at: 'court', r: roundIdx, c: courtNo - 1, s: idx, i: slot
@@ -2208,6 +2433,10 @@
     card.appendChild(plan);
     return card;
   }
+
+  // Set while a swap redraws the board: the cards are already on the table,
+  // and dealing them in again would fight the names flying across it.
+  var quietRender = false;
 
   function renderRounds() {
     stopRoll();
@@ -2251,7 +2480,11 @@
       head.className = 'round__head';
       var h3 = document.createElement('h3');
       h3.className = 'round__no';
-      h3.textContent = 'รอบ ' + (idx + 1);
+      h3.appendChild(document.createTextNode('รอบ '));
+      var badge = document.createElement('span');
+      badge.className = 'round__badge';
+      badge.textContent = String(idx + 1);
+      h3.appendChild(badge);
       var meta = document.createElement('span');
       meta.className = 'round__meta';
       var people = round.reduce(function (n, m) { return n + m[0].length + m[1].length; }, 0);
@@ -2276,7 +2509,7 @@
         var card = courtCard(match, i + 1, idx);
         // Only the rounds anyone can see deal in; a long rotation would
         // otherwise animate dozens of cards nobody has scrolled to.
-        if (idx < 3) {
+        if (idx < 3 && !quietRender) {
           card.classList.add('court--deal');
           card.style.setProperty('--i', String(i));
         }
@@ -2487,6 +2720,24 @@
 
   // Spin the first round's name chips for a moment before they settle, so a
   // draw reads as a draw instead of the board silently swapping contents.
+  function replay(node, cls) {
+    node.classList.remove(cls);
+    void node.offsetWidth; // restart it if the last one is still running
+    node.classList.add(cls);
+    node.addEventListener('animationend', function off() {
+      node.classList.remove(cls);
+      node.removeEventListener('animationend', off);
+    });
+  }
+
+  // A draw starts something: the shuttle turns over and the button rings.
+  function celebrate() {
+    if (!motionOk()) return;
+    Array.prototype.forEach.call(document.querySelectorAll('.masthead .mark, .minibar .mark'),
+      function (m) { replay(m, 'mark--spin'); });
+    replay(el.shuffle, 'cta--flash');
+  }
+
   function animateDraw() {
     stopRoll();
     if (!motionOk() || state.players.length < 2) return;
@@ -2814,7 +3065,8 @@
 
     syncSets();
     state.coverage = coverageOf(flatRounds(), state.players, perCourt());
-    render();
+    quietRender = true;
+    try { render(); } finally { quietRender = false; }
     save();
     setStatus('สลับ ' + an + ' กับ ' + bn + ' แล้ว — สถิติลง/พักปรับตามให้เรียบร้อย', 'ok');
   }
@@ -2845,7 +3097,73 @@
     }
     var from = pick;
     pick = null;
+    // Where each name is now, and where it will be: a court place keeps its
+    // address, but the waiting and resting rows are rebuilt around names.
+    var flights = [
+      { from: chipRect(from), to: landing(spot, nameAt(from)) },
+      { from: chipRect(spot), to: landing(from, nameAt(spot)) }
+    ];
     swapPlaces(from, spot);
+    fly(flights);
+  }
+
+  function chipAt(spot) {
+    var chips = el.rounds.querySelectorAll('button.name');
+    for (var i = 0; i < chips.length; i++) {
+      if (samePlace(chips[i].spot, spot)) return chips[i];
+    }
+    return null;
+  }
+
+  function chipRect(spot) {
+    var chip = chipAt(spot);
+    return chip ? chip.getBoundingClientRect() : null;
+  }
+
+  function landing(spot, name) {
+    return spot.at === 'court' ? spot : { at: spot.at, r: spot.r, name: name };
+  }
+
+  // A copy of each chip, dressed as the chip it becomes, crosses from the old
+  // place to the new one above everything; the real chip shows when it lands.
+  // It flies as a copy because the mats clip anything that leaves them.
+  var FLY_STYLE = ['backgroundColor', 'color', 'borderRadius', 'fontFamily',
+    'fontSize', 'fontWeight', 'lineHeight', 'paddingLeft', 'paddingRight', 'boxShadow'];
+
+  function fly(flights) {
+    if (!motionOk() || !document.body.animate) return;
+    flights.forEach(function (f) {
+      var dest = chipAt(f.to);
+      if (!dest || !f.from) return;
+      var to = dest.getBoundingClientRect();
+      var look = getComputedStyle(dest);
+      var ghost = document.createElement('span');
+      ghost.className = 'ghost';
+      ghost.setAttribute('aria-hidden', 'true');
+      ghost.textContent = dest.textContent;
+      FLY_STYLE.forEach(function (k) { ghost.style[k] = look[k]; });
+      ghost.style.border = look.borderTopWidth + ' ' + look.borderTopStyle + ' ' + look.borderTopColor;
+      ghost.style.left = f.from.left + 'px';
+      ghost.style.top = f.from.top + 'px';
+      ghost.style.width = f.from.width + 'px';
+      ghost.style.height = f.from.height + 'px';
+      document.body.appendChild(ghost);
+      dest.style.visibility = 'hidden';
+
+      var dx = to.left - f.from.left;
+      var dy = to.top - f.from.top;
+      var anim = ghost.animate([
+        { transform: 'translate(0, 0) scale(1)', width: f.from.width + 'px' },
+        { transform: 'translate(' + dx / 2 + 'px, ' + (dy / 2 - 14) + 'px) scale(1.08)', offset: .5 },
+        { transform: 'translate(' + dx + 'px, ' + dy + 'px) scale(1)', width: to.width + 'px' }
+      ], { duration: 480, easing: 'cubic-bezier(.45, .75, .2, 1)' });
+      var done = function () {
+        if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
+        dest.style.visibility = '';
+      };
+      anim.onfinish = done;
+      anim.oncancel = done;
+    });
   }
 
   el.rounds.addEventListener('click', function (e) {
@@ -2950,6 +3268,25 @@
     document.addEventListener(ev, pressOff, true);
   });
   window.addEventListener('blur', pressOff);
+
+  /* ---------- the band, collapsed, once it has scrolled away ---------- */
+
+  function showMinibar(on) {
+    el.minibar.classList.toggle('minibar--on', on);
+    el.minibar.setAttribute('aria-hidden', on ? 'false' : 'true');
+    el.toTop.tabIndex = on ? 0 : -1;
+  }
+
+  if (el.masthead && el.minibar && 'IntersectionObserver' in window) {
+    new IntersectionObserver(function (entries) {
+      // While any of the band is on screen it is doing the job itself.
+      showMinibar(!entries[0].isIntersecting);
+    }).observe(el.masthead);
+  }
+
+  el.toTop.addEventListener('click', function () {
+    window.scrollTo({ top: 0, behavior: motionOk() ? 'smooth' : 'auto' });
+  });
 
   var resizeRaf = 0;
   window.addEventListener('resize', function () {
