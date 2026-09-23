@@ -533,6 +533,19 @@
 
   /* Which half of the toggle to show: the mode you would switch TO. */
   .theme-sun { display: none; }
+  .sound-off,
+  #sound[aria-pressed="false"] .sound-on { display: none; }
+  #sound[aria-pressed="false"] .sound-off { display: block; }
+  /* Four round buttons and the name on a 375pt phone: the buttons give first,
+     then the name, rather than the row running off the side. */
+  /* A TV view is no use on the smallest phones, and the room is. */
+  @media (max-width: 359px) { #bigBtn { display: none; } }
+  @media (max-width: 430px) {
+    .masthead__in { gap: 10px; }
+    .topbar { gap: 4px; }
+    .masthead .icon-btn { width: 40px; height: 40px; }
+    .masthead h1 { min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  }
   :root[data-theme="dark"] .theme-sun { display: block; }
   :root[data-theme="dark"] .theme-moon { display: none; }
   @media (prefers-color-scheme: dark) {
@@ -1091,6 +1104,7 @@
     border-radius: 100px;
     padding: 0 14px;
     min-height: 40px;
+    white-space: nowrap;
     cursor: pointer;
   }
   .mini-btn:hover { color: var(--ink); background: var(--glass-2); }
@@ -1259,6 +1273,58 @@
     transform: translateY(-1px);
     box-shadow: 0 0 0 2px var(--cta), 0 6px 14px rgba(0, 0, 0, .28);
   }
+  /* Ending a game: on the court's own header, where whoever is standing by
+     that court will look for it. */
+  .court__done {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    min-height: 34px;
+    padding: 0 12px 0 9px;
+    border: 0;
+    border-radius: 100px;
+    background: var(--accent-soft);
+    box-shadow: inset 0 0 0 1px var(--accent-line);
+    color: var(--accent-text);
+    font-family: var(--font-body);
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+    transition: transform .12s ease, background-color .15s ease;
+  }
+  /* Past the pill on every side, so a thumb at the edge still counts. */
+  .court__done::after { content: ""; position: absolute; inset: -5px -4px; }
+  .court__done svg { width: 16px; height: 16px; }
+  @media (hover: hover) { .court__done:hover { background: var(--accent-line); } }
+  .court__done.is-press,
+  .court__done:active { transform: scale(.95); }
+  .court__done:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 2px; }
+  /* A court between games: the mat stays, dimmed, with why it's empty. */
+  .court--idle .plan { filter: saturate(.55) brightness(.8); }
+  .court--idle .court__fmt { color: var(--ink-3); letter-spacing: .02em; }
+  .plan__idle {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    place-items: center;
+    margin: 0;
+    padding: 0 12%;
+    text-align: center;
+    font-size: 13.5px;
+    line-height: 1.5;
+    color: var(--court-ink);
+  }
+  /* Its own chip, so the words don't sit on the net and the chalk. */
+  .plan__idle span {
+    padding: .45em 1.1em;
+    border-radius: 14px;
+    background: rgba(8, 26, 21, .62);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+  }
+
   .swaphint {
     margin: 2px 0 0;
     font-size: 12.5px;
@@ -1518,6 +1584,185 @@
   @media (hover: none) and (pointer: coarse) {
     textarea, .fee__row input { font-size: 16px; }
   }
+
+  /* ---------- the big screen ----------
+     Always the band's deep green, whatever the theme: it's a scoreboard, and
+     it's read from across a hall. Sizes come from the space each court gets,
+     so the same page fills a phone, a tablet or a TV. */
+  .stage {
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    border: 0;
+    padding:
+      max(14px, env(safe-area-inset-top, 0px))
+      max(18px, env(safe-area-inset-right, 0px))
+      max(14px, env(safe-area-inset-bottom, 0px))
+      max(18px, env(safe-area-inset-left, 0px));
+    background-color: #0B3F33;
+    background-image:
+      var(--grain),
+      radial-gradient(90% 70% at 50% 40%, rgba(255, 255, 255, .07), rgba(0, 0, 0, .25) 100%);
+    background-size: 180px 180px, 100% 100%;
+    color: #F4F9F3;
+    flex-direction: column;
+    gap: clamp(10px, 2vh, 22px);
+    overflow: hidden;
+  }
+  .stage[open] { display: flex; }
+  .stage::backdrop { background: #0B3F33; }
+  html.staged, html.staged body { overflow: hidden; }
+
+  .stage__bar {
+    display: flex;
+    align-items: center;
+    gap: clamp(10px, 1.4vw, 18px);
+  }
+  .stage__bar .mark { width: clamp(28px, 3.4vw, 46px); height: auto; }
+  .stage__title {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(20px, 2.6vw, 38px);
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .stage__clock {
+    font-family: var(--font-mono);
+    font-size: clamp(16px, 2.2vw, 32px);
+    font-variant-numeric: tabular-nums;
+    color: rgba(244, 249, 243, .7);
+    margin-left: auto;
+  }
+  .stage__exit {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 44px;
+    padding: 0 16px 0 12px;
+    border: 0;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, .12);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .2), inset 0 0 0 1px rgba(255, 255, 255, .16);
+    color: #F4F9F3;
+    font-family: var(--font-body);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .stage__exit svg { width: 18px; height: 18px; }
+  /* On a phone the cross says it; the words would push the title onto two lines. */
+  @media (max-width: 600px) {
+    .stage__exit { width: 44px; padding: 0; justify-content: center; }
+    .stage__exit-label {
+      position: absolute; width: 1px; height: 1px; overflow: hidden;
+      clip-path: inset(50%); white-space: nowrap;
+    }
+    .stage__title { white-space: nowrap; }
+  }
+  @media (hover: hover) { .stage__exit:hover { background: rgba(255, 255, 255, .2); } }
+  .stage__exit.is-press { background: rgba(255, 255, 255, .28); }
+  .stage__exit:focus-visible,
+  .stage .court__done:focus-visible { outline: 2px solid var(--cta); outline-offset: 2px; }
+
+  .stage__courts {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--rows, 1), auto);
+    gap: 20px;
+  }
+  .stage__courts { align-content: center; }
+  .stage .court {
+    width: calc(var(--plan-w, 300px) + 28px);
+    max-width: 100%;
+    justify-self: center;
+    align-self: center;
+    gap: 10px;
+    padding: 14px;
+    background: rgba(255, 255, 255, .05);
+    background-image: none;
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .1), inset 0 0 0 1px rgba(255, 255, 255, .08);
+    border-radius: clamp(16px, 1.8vw, 26px);
+  }
+  .stage .court__head { padding: 0 4px; gap: clamp(8px, 1vw, 14px); }
+  /* The pip colours are tuned for a light card; here the court's own mat, ringed. */
+  .stage .court__dot {
+    width: clamp(10px, 1.1vw, 16px);
+    height: clamp(10px, 1.1vw, 16px);
+    border-radius: 4px;
+    background: var(--mat);
+    box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, .5);
+  }
+  .stage .court__no { color: #F4F9F3; font-size: clamp(17px, 2vw, 30px); }
+  .stage .court__fmt { color: rgba(244, 249, 243, .62); font-size: clamp(12px, 1.2vw, 17px); }
+  .stage .court--odd .court__fmt { color: #F4F9F3; }
+  .stage .court__done {
+    min-height: clamp(38px, 4.4vh, 52px);
+    padding: 0 clamp(14px, 1.4vw, 20px) 0 clamp(10px, 1vw, 14px);
+    background: var(--cta);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, .25);
+    color: #1B2A10;
+    font-size: clamp(14px, 1.4vw, 19px);
+  }
+  .stage .court__done svg { width: 1.2em; height: 1.2em; }
+  @media (hover: hover) { .stage .court__done:hover { background: var(--cta-press); } }
+
+  /* Names size to the mat they stand on. */
+  .stage .plan {
+    width: 100%;
+    min-height: 0;
+    container-type: inline-size;
+    padding: clamp(8px, 1.4vw, 20px);
+    border-radius: clamp(10px, 1.2vw, 18px);
+  }
+  .stage .name {
+    font-size: clamp(15px, 3.9cqw, 64px);
+    font-weight: 600;
+    padding: .32em .8em;
+  }
+  .stage .plan__idle { font-size: clamp(15px, 2.8cqw, 40px); }
+  .stage__empty {
+    align-self: center;
+    justify-self: center;
+    max-width: 30em;
+    margin: 0;
+    text-align: center;
+    font-size: clamp(18px, 2.4vw, 32px);
+    line-height: 1.5;
+    color: rgba(244, 249, 243, .8);
+  }
+
+  .stage__next {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px clamp(8px, 1vw, 14px);
+    min-height: 1px;
+    font-size: clamp(15px, 1.6vw, 24px);
+  }
+  .stage__next:empty { display: none; }
+  .stage__label {
+    font-family: var(--font-display);
+    font-weight: 700;
+    color: var(--cta);
+    margin-right: 4px;
+  }
+  .stage__game,
+  .stage__who {
+    padding: .2em .8em;
+    border-radius: 100px;
+    background: rgba(255, 255, 255, .1);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .12);
+    white-space: pre;
+  }
+  .stage__more { color: rgba(244, 249, 243, .62); }
 
   /* ---------- the opening ----------
      It starts as the exact picture iOS shows while the app loads (splash/),
@@ -1818,6 +2063,24 @@
         </svg>
         ติดตั้งเป็นแอป
       </button>
+      <button type="button" class="icon-btn" id="bigBtn"
+              aria-label="จอใหญ่ — แสดงสนามที่กำลังเล่นตัวใหญ่" title="จอใหญ่ — สำหรับแท็บเล็ตหรือทีวีข้างสนาม">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3" y="4.5" width="18" height="12" rx="2.2" stroke="currentColor" stroke-width="2" />
+          <path d="M8.5 20 H15.5 M12 16.5 V20" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
+      <button type="button" class="icon-btn" id="sound" aria-pressed="true" aria-label="ปิดเสียง">
+        <svg class="sound-on" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 9.5 H7.5 L12 5.5 V18.5 L7.5 14.5 H4 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          <path d="M15.5 9.2 A4 4 0 0 1 15.5 14.8 M18.2 6.6 A7.6 7.6 0 0 1 18.2 17.4"
+                stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <svg class="sound-off" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <path d="M4 9.5 H7.5 L12 5.5 V18.5 L7.5 14.5 H4 Z" stroke="currentColor" stroke-width="2" stroke-linejoin="round" />
+          <path d="M16 9.5 L21 14.5 M21 9.5 L16 14.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+      </button>
       <button type="button" class="icon-btn" id="theme"
               aria-label="สลับโหมดสว่างและโหมดมืด" title="สลับโหมดสว่างและโหมดมืด">
         <svg class="theme-moon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
@@ -1998,6 +2261,31 @@
   </svg>
 </template>
 
+<!-- The big screen: only what is on court now, sized to be read from the bench. -->
+<dialog class="stage" id="stage" aria-labelledby="stageTitle">
+  <header class="stage__bar">
+    <svg class="mark" viewBox="0 0 48 48" aria-hidden="true">
+      <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M10.5 10.5 L17.5 32.5 M37.5 10.5 L30.5 32.5 M10.5 10.5 Q24 3.5 37.5 10.5"
+              stroke="#D9F25C" stroke-width="2.4" />
+        <path d="M17.8 8.6 L20.8 32.5 M24 7 L24 32.5 M30.2 8.6 L27.2 32.5 M13.6 21 Q24 25.4 34.4 21"
+              stroke="#D9F25C" stroke-width="1.4" opacity=".5" />
+      </g>
+      <path d="M17.5 31.8 h13 a6.5 6.5 0 0 1 -13 0 z" fill="#D9F25C" />
+    </svg>
+    <h2 class="stage__title" id="stageTitle">ในสนามตอนนี้</h2>
+    <span class="stage__clock" id="stageClock"></span>
+    <button type="button" class="stage__exit" id="stageExit">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M6 6 L18 18 M18 6 L6 18" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" />
+      </svg>
+      <span class="stage__exit-label">ออกจากจอใหญ่</span>
+    </button>
+  </header>
+  <div class="stage__courts" id="stageCourts"></div>
+  <footer class="stage__next" id="stageNext"></footer>
+</dialog>
+
 <dialog class="modal" id="wipeDlg" aria-labelledby="wipeTitle">
   <h2 class="modal__title" id="wipeTitle">ล้างข้อมูลทั้งหมด?</h2>
   <p class="modal__body">
@@ -2039,6 +2327,9 @@
     rounds: [],
     waiting: [],
     resting: [],
+    // Games finished off the first round, kept so the tallies of a rotation
+    // still count what was played once it has left the board.
+    done: [],
     coverage: null,
     played: {},
     rested: {},
@@ -2078,6 +2369,13 @@
     status: document.getElementById('status'),
     rounds: document.getElementById('rounds'),
     theme: document.getElementById('theme'),
+    sound: document.getElementById('sound'),
+    bigBtn: document.getElementById('bigBtn'),
+    stage: document.getElementById('stage'),
+    stageCourts: document.getElementById('stageCourts'),
+    stageNext: document.getElementById('stageNext'),
+    stageClock: document.getElementById('stageClock'),
+    stageExit: document.getElementById('stageExit'),
     setupToggle: document.getElementById('setupToggle'),
     setupBody: document.getElementById('setupBody'),
     sumPlayers: document.getElementById('sumPlayers'),
@@ -2112,6 +2410,7 @@
     state.rounds = [];
     state.waiting = [];
     state.resting = [];
+    state.done = [];
     state.coverage = null;
     pick = null;
   }
@@ -2127,6 +2426,12 @@
   function inMatch(match, name) {
     return match[0].indexOf(name) >= 0 || match[1].indexOf(name) >= 0;
   }
+
+  function namesIn(match) { return match[0].concat(match[1]); }
+
+  // A court in the first round that has finished and has nobody free to take
+  // it yet. It holds its place, so court 2 stays court 2 on the board.
+  function isHole(match) { return !match[0].length && !match[1].length; }
 
   function playsInSet(name) {
     return flatRounds().filter(function (m) { return inMatch(m, name); }).length;
@@ -2518,6 +2823,7 @@
     render();
     animateDraw();
     celebrate();
+    sound('draw');
 
     var msg;
     if (rotating) {
@@ -2566,11 +2872,124 @@
     var fresh = dealMatches(mixed.slice(0, cut), per)
       .concat(singles ? dealMatches(mixed.slice(cut), 2) : []);
     fresh.forEach(recordPairs);
-    state.rounds[index] = fresh;
+    state.rounds[index] = round.map(function (m) { return isHole(m) ? m : fresh.shift(); });
     render();
     if (index === 0) animateDraw();
+    sound('next');
     save();
     setStatus('สุ่มรอบที่ ' + (index + 1) + ' ใหม่แล้ว — คนเดิม สลับสนามและคู่ใหม่', 'ok');
+  }
+
+  /* ---------- a game ends, the next one goes on ---------- */
+
+  // Courts don't finish together, so nobody should have to wait for the slowest
+  // game before the next four walk on. The first round is what is being played;
+  // a court that ends there takes the next game from the rounds below it, and
+  // once those run out a random draw deals a fresh one from whoever is free.
+
+  function onCourtNow() {
+    var busy = Object.create(null);
+    (state.rounds[0] || []).forEach(function (m) {
+      namesIn(m).forEach(function (n) { busy[n] = true; });
+    });
+    return busy;
+  }
+
+  // The first game still to come whose players are all off court, lifted out
+  // of its round. In a rotation the next game can include someone still
+  // playing next door; that one waits and a later one goes first.
+  function nextQueued(busy) {
+    for (var r = 1; r < state.rounds.length; r++) {
+      var round = state.rounds[r];
+      for (var c = 0; c < round.length; c++) {
+        if (namesIn(round[c]).some(function (n) { return busy[n]; })) continue;
+        return round.splice(c, 1)[0];
+      }
+    }
+    return null;
+  }
+
+  // Random draws only: the fairest `per` of whoever is free — fewest games,
+  // then longest off court — split into the pairing they have had least.
+  function freshGame(busy, per) {
+    var queued = Object.create(null);
+    state.rounds.slice(1).forEach(function (round) {
+      round.forEach(function (m) { namesIn(m).forEach(function (n) { queued[n] = true; }); });
+    });
+    var free = state.players.filter(function (n) { return !busy[n] && !queued[n]; });
+    if (free.length < per) return null;
+    var line = queueOrder(free);
+    var game = dealMatches(line.slice(0, per), per)[0];
+    if (!game) return null;
+    recordMatch(game);
+    line.forEach(function (name, i) {
+      if (i < per) {
+        state.waits[name] = 0;
+      } else {
+        state.rested[name] = (state.rested[name] || 0) + 1;
+        state.waits[name] = (state.waits[name] || 0) + 1;
+      }
+    });
+    return game;
+  }
+
+  // Fill every empty court on the first round, in court order. `was` is the
+  // court that just ended: a 1:1 court opened beside the doubles stays 1:1.
+  function fillCourts(was, wasSingles) {
+    var now = state.rounds[0];
+    var filled = [];
+    now.forEach(function (m, c) {
+      if (!isHole(m)) return;
+      var busy = onCourtNow();
+      var next = nextQueued(busy);
+      if (!next && state.plan === 'random') {
+        next = freshGame(busy, c === was && wasSingles ? 2 : perCourt());
+      }
+      if (next) {
+        now[c] = next;
+        filled.push(c);
+      }
+    });
+    state.rounds = [now].concat(state.rounds.slice(1).filter(function (r) { return r.length; }));
+    // A rotation that has played its last game leaves nothing on court.
+    if (now.every(isHole)) state.rounds.shift();
+    return filled;
+  }
+
+  function sideText(side) { return side.join(' + '); }
+  function gameText(m) { return sideText(m[0]) + ' กับ ' + sideText(m[1]); }
+
+  function finishCourt(c) {
+    var now = state.rounds[0];
+    if (!now || !now[c] || isHole(now[c])) return;
+    pick = null;
+    var over = now[c];
+    state.done.push(over);
+    now[c] = [[], []];
+
+    var filled = fillCourts(c, isSinglesMatch(over) && state.mode === 'doubles');
+    syncSets();
+    state.coverage = coverageOf(state.done.concat(flatRounds()), state.players, perCourt());
+
+    dealOnly = filled;
+    try { render(); } finally { dealOnly = null; }
+    save();
+    if (filled.length) sound('next');
+
+    var msg = 'สนาม ' + (c + 1) + ' จบเกมแล้ว';
+    var back = state.rounds[0] && filled.indexOf(c) >= 0 ? state.rounds[0][c] : null;
+    if (back) msg += ' — ต่อไป ' + gameText(back);
+    filled.forEach(function (k) {
+      if (k !== c) msg += ' · สนาม ' + (k + 1) + ' ได้ ' + gameText(state.rounds[0][k]);
+    });
+    if (!state.rounds.length) {
+      msg += ' — ครบทุกแมตช์ในตารางแล้ว';
+    } else if (!back) {
+      msg += state.plan === 'rotate'
+        ? ' — แมตช์ต่อไปมีคนที่ยังเล่นอยู่สนามอื่น สนามนี้จะลงต่อเมื่อสนามนั้นจบ'
+        : ' — คนว่างไม่พอเปิดสนามนี้ต่อ';
+    }
+    setStatus(msg, 'ok');
   }
 
   function resetAll() {
@@ -2643,10 +3062,13 @@
     return b;
   }
 
-  function courtCard(match, courtNo, roundIdx) {
+  // still: drawn for the big screen, where the names are to be read from
+  // across the hall rather than tapped.
+  function courtCard(match, courtNo, roundIdx, still) {
     var card = document.createElement('article');
     card.className = 'court';
     card.setAttribute('data-court', String(courtNo));
+    var idle = isHole(match);
 
     var head = document.createElement('header');
     head.className = 'court__head';
@@ -2662,9 +3084,23 @@
     if (single && state.mode === 'doubles') card.classList.add('court--odd');
     var fmt = document.createElement('span');
     fmt.className = 'court__fmt';
-    fmt.textContent = single ? '1:1' : '2:2';
+    fmt.textContent = idle ? 'ว่าง' : single ? '1:1' : '2:2';
     head.appendChild(no);
     head.appendChild(fmt);
+
+    // The round being played is the only one whose games can end.
+    if (roundIdx === 0 && !idle) {
+      var end = document.createElement('button');
+      end.type = 'button';
+      end.className = 'court__done';
+      end.setAttribute('data-c', String(courtNo - 1));
+      end.setAttribute('aria-label', 'สนาม ' + courtNo + ' จบเกม — เรียกคนต่อไปลง');
+      end.innerHTML = '<svg viewBox="0 0 24 24" fill="none" aria-hidden="true">' +
+        '<path d="M5 12.5 L10 17 L19 7.5" stroke="currentColor" stroke-width="2.4" ' +
+        'stroke-linecap="round" stroke-linejoin="round" /></svg>จบเกม';
+      head.appendChild(end);
+    }
+    if (idle) card.classList.add('court--idle');
 
     var plan = document.createElement('div');
     plan.className = 'plan';
@@ -2684,12 +3120,23 @@
       var box = document.createElement('div');
       box.className = 'side side--' + (idx ? 'b' : 'a');
       side.forEach(function (name, slot) {
-        box.appendChild(nameChip(name, {
+        box.appendChild(nameChip(name, still ? null : {
           at: 'court', r: roundIdx, c: courtNo - 1, s: idx, i: slot
         }));
       });
       plan.appendChild(box);
     });
+
+    if (idle) {
+      var wait = document.createElement('p');
+      wait.className = 'plan__idle';
+      var say = document.createElement('span');
+      wait.appendChild(say);
+      say.textContent = state.plan === 'rotate'
+        ? 'รอคนจากสนามอื่นจบก่อน แล้วจะลงต่อให้เอง'
+        : 'คนว่างไม่พอเปิดสนามนี้';
+      plan.appendChild(wait);
+    }
 
     card.appendChild(head);
     card.appendChild(plan);
@@ -2699,6 +3146,8 @@
   // Set while a swap redraws the board: the cards are already on the table,
   // and dealing them in again would fight the names flying across it.
   var quietRender = false;
+  // Set after a game ends: only the courts that just took new people deal in.
+  var dealOnly = null;
 
   function renderRounds() {
     stopRoll();
@@ -2750,7 +3199,9 @@
       var meta = document.createElement('span');
       meta.className = 'round__meta';
       var people = round.reduce(function (n, m) { return n + m[0].length + m[1].length; }, 0);
-      meta.textContent = round.length + ' สนาม · ' + people + ' คนลง';
+      meta.textContent = round.length + ' สนาม · ' + (idx === 0 && state.done.length
+        ? 'จบแล้ว ' + state.done.length + ' เกม'
+        : people + ' คนลง');
       head.appendChild(h3);
       head.appendChild(meta);
 
@@ -2771,7 +3222,7 @@
         var card = courtCard(match, i + 1, idx);
         // Only the rounds anyone can see deal in; a long rotation would
         // otherwise animate dozens of cards nobody has scrolled to.
-        if (idx < 3 && !quietRender) {
+        if (dealOnly ? idx === 0 && dealOnly.indexOf(i) >= 0 : idx < 3 && !quietRender) {
           card.classList.add('court--deal');
           card.style.setProperty('--i', String(i));
         }
@@ -2890,6 +3341,7 @@
     syncSetupBar();
     renderRounds();
     renderStats();
+    renderStage();
   }
 
   /* ---------- splitting the night's cost ---------- */
@@ -3031,6 +3483,251 @@
     }, 55);
   }
 
+  /* ---------- the sound of a racket on a shuttle ---------- */
+
+  // Made on the spot rather than loaded: a crack of strings (a burst of noise
+  // through a band around 2.4kHz) over the knock of the frame (a short falling
+  // tone). Nothing to download, and it works offline like the rest.
+  var SOUND_KEY = 'badminton-sound';
+  var soundOn = true;
+  try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) { /* on by default */ }
+  var audio = null;
+
+  function ear() {
+    if (audio) return audio;
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return null;
+    try { audio = new AC(); } catch (e) { audio = null; }
+    return audio;
+  }
+
+  function hit(ctx, at, level) {
+    var t = ctx.currentTime + at;
+    var len = Math.floor(ctx.sampleRate * .07);
+    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+    var data = buf.getChannelData(0);
+    for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
+    var crack = ctx.createBufferSource();
+    crack.buffer = buf;
+    var band = ctx.createBiquadFilter();
+    band.type = 'bandpass';
+    band.frequency.value = 2400;
+    band.Q.value = 1.1;
+    var crackGain = ctx.createGain();
+    crackGain.gain.value = level;
+    crack.connect(band);
+    band.connect(crackGain);
+    crackGain.connect(ctx.destination);
+    crack.start(t);
+
+    var knock = ctx.createOscillator();
+    knock.type = 'sine';
+    knock.frequency.setValueAtTime(820, t);
+    knock.frequency.exponentialRampToValueAtTime(190, t + .05);
+    var knockGain = ctx.createGain();
+    knockGain.gain.setValueAtTime(level * .55, t);
+    knockGain.gain.exponentialRampToValueAtTime(.0001, t + .09);
+    knock.connect(knockGain);
+    knockGain.connect(ctx.destination);
+    knock.start(t);
+    knock.stop(t + .1);
+  }
+
+  // A draw is a serve and its return; a court changing over is one stroke.
+  // Always called from a tap, which is what lets iOS start the sound at all.
+  function sound(kind) {
+    if (!soundOn) return;
+    var ctx = ear();
+    if (!ctx) return;
+    try {
+      if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
+      hit(ctx, 0, .5);
+      if (kind === 'draw') hit(ctx, .36, .32);
+    } catch (e) { /* no sound this time; the board is what matters */ }
+  }
+
+  function paintSound() {
+    el.sound.setAttribute('aria-pressed', soundOn ? 'true' : 'false');
+    el.sound.setAttribute('aria-label', soundOn ? 'ปิดเสียง' : 'เปิดเสียง');
+    el.sound.title = soundOn ? 'ปิดเสียงตอนสุ่มและตอนเปลี่ยนสนาม' : 'เปิดเสียงตอนสุ่มและตอนเปลี่ยนสนาม';
+  }
+
+  el.sound.addEventListener('click', function () {
+    soundOn = !soundOn;
+    try { localStorage.setItem(SOUND_KEY, soundOn ? 'on' : 'off'); } catch (e) { /* this visit only */ }
+    paintSound();
+    sound('next'); // turning it on answers with the sound itself
+  });
+  paintSound();
+
+  /* ---------- the big screen ---------- */
+
+  // A tablet propped by the net or a TV on the wall: the courts in play and
+  // who is up next, big enough to read from the bench. The games end from here
+  // too, so whoever holds the tablet can run the night from it.
+  var canStage = !!(el.stage && typeof el.stage.showModal === 'function');
+  var wake = null;
+  var clockTimer = null;
+
+  function stageOpen() { return !!(el.stage && el.stage.open); }
+
+  function tick() {
+    var d = new Date();
+    el.stageClock.textContent = String(d.getHours()).padStart(2, '0') + ':' +
+      String(d.getMinutes()).padStart(2, '0');
+  }
+
+  // As many columns as make each court biggest: two side by side on a TV,
+  // stacked on a tablet held upright.
+  function stageGrid(n) {
+    var box = el.stageCourts.getBoundingClientRect();
+    var best = 1, bestW = 0;
+    for (var cols = 1; cols <= n; cols++) {
+      var rows = Math.ceil(n / cols);
+      // Less each card's padding and its header row.
+      var gap = 20;
+      var w = Math.min((box.width - gap * (cols - 1)) / cols - 28,
+        ((box.height - gap * (rows - 1)) / rows - 96) * 2.2);
+      if (w > bestW + 1) { bestW = w; best = cols; }
+    }
+    el.stageCourts.style.setProperty('--plan-w', Math.max(160, Math.floor(bestW)) + 'px');
+    el.stageCourts.style.setProperty('--cols', String(best));
+    el.stageCourts.style.setProperty('--rows', String(Math.ceil(n / best)));
+  }
+
+  // Up next: the games already drawn, or else the line a fresh game draws from.
+  function nextLine() {
+    var wrap = document.createDocumentFragment();
+    var lab = document.createElement('b');
+    lab.className = 'stage__label';
+    wrap.appendChild(lab);
+    var queued = state.rounds.slice(1).reduce(function (all, r) { return all.concat(r); }, []);
+    if (queued.length) {
+      lab.textContent = 'ต่อไป';
+      queued.slice(0, 3).forEach(function (m) {
+        var g = document.createElement('span');
+        g.className = 'stage__game';
+        g.textContent = sideText(m[0]) + '  vs  ' + sideText(m[1]);
+        wrap.appendChild(g);
+      });
+      if (queued.length > 3) {
+        var more = document.createElement('span');
+        more.className = 'stage__more';
+        more.textContent = 'อีก ' + (queued.length - 3) + ' แมตช์';
+        wrap.appendChild(more);
+      }
+      return wrap;
+    }
+    var busy = onCourtNow();
+    var free = state.players.filter(function (n) { return !busy[n]; }).sort(function (a, b) {
+      return ((state.played[a] || 0) - (state.played[b] || 0)) ||
+             ((state.waits[b] || 0) - (state.waits[a] || 0)) || a.localeCompare(b, 'th');
+    });
+    if (!free.length) return null;
+    lab.textContent = state.plan === 'random' ? 'คิวถัดไป' : 'พัก';
+    free.forEach(function (name) {
+      var chip = document.createElement('span');
+      chip.className = 'stage__who';
+      chip.textContent = name;
+      wrap.appendChild(chip);
+    });
+    return wrap;
+  }
+
+  function renderStage() {
+    if (!stageOpen()) return;
+    el.stageCourts.textContent = '';
+    el.stageNext.textContent = '';
+    var now = state.rounds[0];
+    if (!now) {
+      var empty = document.createElement('p');
+      empty.className = 'stage__empty';
+      empty.textContent = state.done.length
+        ? 'ครบทุกแมตช์แล้ว — กด “' + drawLabel() + '” เพื่อเริ่มชุดใหม่'
+        : 'ยังไม่ได้จับคู่ — กด “' + drawLabel() + '” แล้วสนามจะขึ้นที่นี่';
+      el.stageCourts.appendChild(empty);
+      el.stageCourts.style.setProperty('--cols', '1');
+      el.stageCourts.style.setProperty('--rows', '1');
+      return;
+    }
+    now.forEach(function (m, c) {
+      var card = courtCard(m, c + 1, 0, true);
+      if (dealOnly ? dealOnly.indexOf(c) >= 0 : !quietRender) {
+        card.classList.add('court--deal');
+        card.style.setProperty('--i', String(c));
+      }
+      el.stageCourts.appendChild(card);
+    });
+    var next = nextLine();
+    if (next) el.stageNext.appendChild(next);
+    // Measured once the line under the courts is in, since it takes height.
+    stageGrid(now.length);
+  }
+
+  function holdAwake() {
+    if (!('wakeLock' in navigator) || !stageOpen() || document.visibilityState !== 'visible') return;
+    navigator.wakeLock.request('screen').then(function (lock) {
+      wake = lock;
+    }).catch(function () { /* low battery or not allowed — the screen may sleep */ });
+  }
+
+  function openStage() {
+    if (!canStage || stageOpen()) return;
+    pick = null;
+    paintPick();
+    el.stage.showModal();
+    document.documentElement.classList.add('staged');
+    tick();
+    clockTimer = setInterval(tick, 15000);
+    renderStage();
+    holdAwake();
+    // The view itself goes full screen, not the page: fullscreening the page
+    // would lift it above this dialog and bury the courts under the board.
+    var box = el.stage;
+    var full = box.requestFullscreen || box.webkitRequestFullscreen;
+    if (full && !document.fullscreenElement) {
+      try {
+        var p = full.call(box);
+        if (p && p.catch) p.catch(function () { /* stays a full-window view */ });
+      } catch (e) { /* same */ }
+    }
+  }
+
+  function closeStage() {
+    if (stageOpen()) el.stage.close();
+  }
+
+  if (canStage) {
+    el.bigBtn.addEventListener('click', openStage);
+    el.stageExit.addEventListener('click', closeStage);
+    // Esc closes the dialog itself; this is everything else that has to stop.
+    el.stage.addEventListener('close', function () {
+      document.documentElement.classList.remove('staged');
+      clearInterval(clockTimer);
+      clockTimer = null;
+      if (wake) { wake.release().catch(function () {}); wake = null; }
+      var exit = document.exitFullscreen || document.webkitExitFullscreen;
+      if ((document.fullscreenElement || document.webkitFullscreenElement) && exit) {
+        try {
+          var p = exit.call(document);
+          if (p && p.catch) p.catch(function () {});
+        } catch (e) { /* already out */ }
+      }
+      el.bigBtn.focus();
+    });
+    el.stage.addEventListener('click', function (e) {
+      var end = e.target.closest('.court__done');
+      if (end) finishCourt(parseInt(end.getAttribute('data-c'), 10));
+    });
+    // A lock is dropped whenever the page is hidden; take it back on return.
+    document.addEventListener('visibilitychange', holdAwake);
+    window.addEventListener('resize', function () {
+      if (stageOpen() && state.rounds[0]) stageGrid(state.rounds[0].length);
+    });
+  } else {
+    el.bigBtn.hidden = true;
+  }
+
   /* ---------- input wiring ---------- */
 
   function syncNames() {
@@ -3101,7 +3798,7 @@
         played: state.played, rested: state.rested, pairs: state.pairs,
         waits: state.waits,
         rounds: state.rounds, waiting: state.waiting,
-        resting: state.resting, coverage: state.coverage
+        resting: state.resting, coverage: state.coverage, done: state.done
       }));
     } catch (e) { /* private window or blocked storage — nothing to do */ }
   }
@@ -3123,12 +3820,18 @@
       side.every(function (n) { return typeof n === 'string' && n; });
   }
 
-  // A draw is rounds of matches, each match two sides of names.
+  function isMatch(match) {
+    return Array.isArray(match) && match.length === 2 && match.every(isSide);
+  }
+
+  // A draw is rounds of matches, each match two sides of names. Only the first
+  // round, the one on court, can hold a finished court still waiting for people.
   function roundsFrom(raw) {
     if (!Array.isArray(raw) || !raw.length) return null;
-    var ok = raw.every(function (round) {
+    var ok = raw.every(function (round, r) {
       return Array.isArray(round) && round.length > 0 && round.every(function (match) {
-        return Array.isArray(match) && match.length === 2 && match.every(isSide);
+        return isMatch(match) || (r === 0 && Array.isArray(match) && match.length === 2 &&
+          Array.isArray(match[0]) && Array.isArray(match[1]) && isHole(match));
       });
     });
     return ok ? raw : null;
@@ -3326,7 +4029,7 @@
     });
 
     syncSets();
-    state.coverage = coverageOf(flatRounds(), state.players, perCourt());
+    state.coverage = coverageOf(state.done.concat(flatRounds()), state.players, perCourt());
     quietRender = true;
     try { render(); } finally { quietRender = false; }
     save();
@@ -3429,6 +4132,11 @@
   }
 
   el.rounds.addEventListener('click', function (e) {
+    var end = e.target.closest('.court__done');
+    if (end) {
+      finishCourt(parseInt(end.getAttribute('data-c'), 10));
+      return;
+    }
     var chip = e.target.closest('button.name');
     if (!chip || !chip.spot) return;
     chooseChip(chip.spot);
@@ -3520,7 +4228,7 @@
 
   document.addEventListener('pointerdown', function (e) {
     pressOff();
-    var btn = e.target && e.target.closest ? e.target.closest('.btn, .icon-btn, .mini-btn') : null;
+    var btn = e.target && e.target.closest ? e.target.closest('.btn, .icon-btn, .mini-btn, .court__done, .stage__exit') : null;
     if (!btn || btn.disabled) return;
     pressed = btn;
     btn.classList.add('is-press');
@@ -3782,6 +4490,7 @@
         state.resting = namesFrom(saved.resting);
         state.coverage = saved.coverage && typeof saved.coverage.done === 'number' &&
           typeof saved.coverage.total === 'number' ? saved.coverage : null;
+        state.done = Array.isArray(saved.done) ? saved.done.filter(isMatch) : [];
       }
     }
   } else {
