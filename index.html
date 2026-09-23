@@ -1527,18 +1527,36 @@
      units so they land where the launch image drew them on any screen. */
   .intro {
     position: fixed;
-    inset: 0;
+    top: 0;
+    right: 0;
+    left: 0;
+    /* The large viewport, not the visible one: Safari draws the page under its
+       own bars, and whatever was left out there showed through as the light
+       board around the edges. */
+    height: 100vh;
+    height: 100lvh;
     z-index: 100;
     overflow: hidden;
     container-type: size;
     background: #0E5142;
     clip-path: inset(0 0 0 0 round 0 0 0 0);
+    touch-action: none;
     -webkit-tap-highlight-color: transparent;
     /* If the script never gets here, the page still comes out from under it. */
     animation: intro-gone .3s 4s forwards;
   }
   .boot--quick .intro,
   html:not(.boot) .intro { display: none; }
+  /* And the page itself goes green while it plays, so a bounce or a gap past
+     the overlay's edge shows more green rather than the light board. */
+  @media (prefers-reduced-motion: no-preference) {
+    html.boot:not(.boot--quick):not(.boot--go),
+    html.boot:not(.boot--quick):not(.boot--go) body {
+      background: #0E5142;
+      overflow: hidden;
+      overscroll-behavior: none;
+    }
+  }
   .intro::before {
     content: "";
     position: absolute;
