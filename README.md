@@ -3,6 +3,8 @@
 เว็บหน้าเดียวสำหรับสุ่มจับคู่ตีแบดตามรายชื่อที่กรอก ไม่มี build step ไม่มี dependency
 เปิดไฟล์ `index.html` ในเบราว์เซอร์ได้เลย
 
+ใช้งานจริงที่ **https://soombadminton.pages.dev**
+
 ## ความสามารถ
 
 - กรอกรายชื่อผู้เล่น (บรรทัดละคน หรือคั่นด้วย `,`) ตัดชื่อซ้ำอัตโนมัติ
@@ -62,6 +64,7 @@ icon-512.png              ไอคอนความละเอียดสู
 icon-maskable-512.png     ไอคอนแบบ maskable ของ Android (เผื่อขอบให้โดนครอบตัด)
 manifest.webmanifest      ชื่อ สี และรายการไอคอนสำหรับหน้าจอโฮม
 sw.js                     service worker — ทำให้ติดตั้งเป็นแอปได้ และเปิดใช้งานตอนไม่มีเน็ต
+_headers                  header ความปลอดภัยที่ Cloudflare Pages ส่งไปกับทุกไฟล์
 splash/                   ภาพตอนเปิดแอปบน iPhone (apple-touch-startup-image) หนึ่งไฟล์ต่อขนาดจอ
 ```
 
@@ -84,7 +87,7 @@ splash/                   ภาพตอนเปิดแอปบน iPhone (
 
 ## ติดตั้งเป็นแอป
 
-เว็บเป็น PWA เต็มรูปแบบ เปิดผ่าน https (เช่น GitHub Pages) แล้วจะมีปุ่ม
+เว็บเป็น PWA เต็มรูปแบบ เปิดผ่าน https (เช่น Cloudflare Pages) แล้วจะมีปุ่ม
 “ติดตั้งเป็นแอปบนเครื่อง” โผล่ขึ้นในแผงควบคุมเอง (Chrome บน Android และเดสก์ทอป)
 
 - Android — ติดตั้งแล้วได้ WebAPK เปิดขึ้นมาเต็มจอ ไม่มีแถบ URL
@@ -102,7 +105,32 @@ splash/                   ภาพตอนเปิดแอปบน iPhone (
 npx serve .
 ```
 
-## Deploy ด้วย GitHub Pages
+ถ้าจะลองให้เหมือนบน Cloudflare จริง (ส่ง header จาก `_headers` และ redirect `/index.html` ไป `/` ด้วย)
 
-push ขึ้น repo แล้วเปิดที่ **Settings → Pages → Source: Deploy from a branch → main / (root)**
-เว็บจะขึ้นที่ `https://<username>.github.io/<repo>/` ภายใน 1–2 นาที
+```bash
+npx wrangler pages dev .
+```
+
+## Deploy ด้วย Cloudflare Pages
+
+push ขึ้น repo แล้วตั้งค่าครั้งเดียวที่ Cloudflare dashboard
+**Workers & Pages → Create → Pages → Connect to Git** เลือก repo นี้ แล้วตั้ง build ดังนี้
+
+- Framework preset: **None**
+- Build command: *(เว้นว่าง)*
+- Build output directory: **`/`**
+
+เว็บจะขึ้นที่ `https://<ชื่อโปรเจกต์>.pages.dev/` และทุกครั้งที่ push ขึ้น `main` จะ deploy ใหม่เอง
+โปรเจกต์นี้ชื่อ `soombadminton` — ชื่อโปรเจกต์เปลี่ยนทีหลังไม่ได้ ถ้าจะเปลี่ยนลิงก์ต้องสร้างโปรเจกต์ใหม่
+
+`_headers` คือ header ที่ Cloudflare ส่งไปกับทุกไฟล์ — ห้ามเว็บอื่นฝังแอปไว้ใน iframe (`frame-ancestors 'none'`)
+ห้ามเบราว์เซอร์เดาชนิดไฟล์เอง และปิดสิทธิ์กล้อง ไมค์ ตำแหน่ง ฯลฯ ที่แอปไม่ได้ใช้
+ส่วน Content-Security-Policy ตัวหลักอยู่ในแท็ก `<meta>` บนสุดของ `index.html` ที่เดียว
+ถ้าแอปต้องโหลดอะไรจากที่ใหม่ ให้แก้ตรงนั้น — `_headers` ใส่แค่ `frame-ancestors` ที่ `<meta>` ใส่ไม่ได้
+
+> ทำไมไม่ใช้ GitHub Pages — ทุกเว็บ Pages ในบัญชีเดียวกันอยู่บน origin `<username>.github.io` อันเดียว
+> เว็บอื่นในบัญชีจึงอ่าน localStorage และเขียนทับแคชของแอปนี้ได้ ส่วน `.pages.dev` แยก origin ให้ทุกโปรเจกต์
+> และ GitHub Pages ตั้ง header เองไม่ได้ จึงกันการฝังใน iframe ไม่ได้
+
+> Cloudflare ตอบ `/index.html` ด้วย redirect ไป `/` — `sw.js` จึงเก็บหน้าแอปไว้ใต้ `./` ไม่ใช่ `./index.html`
+> ถ้าเก็บ response ที่เป็น redirect ไว้ เบราว์เซอร์จะไม่ยอมเปิดเป็นหน้าเว็บ แอปที่ติดตั้งไว้จะเปิดไม่ขึ้นตอนไม่มีเน็ต

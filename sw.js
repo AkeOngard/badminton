@@ -2,13 +2,16 @@
    Two jobs: make the app installable on Android, and keep it usable in a gym
    with no signal. Everything here is static, so the whole app fits in a cache. */
 
-var VERSION = 'v3';
+var VERSION = 'v4';
 var SHELL = 'badminton-shell-' + VERSION;
 var RUNTIME = 'badminton-runtime-' + VERSION;
-var PAGE = './index.html';
+// The page is kept under the folder URL, not index.html. Cloudflare Pages
+// answers /index.html with a redirect to /, and a browser refuses to open a
+// redirected response as a page: offline, the installed app would launch to
+// an error. Every host serves the folder URL directly.
+var PAGE = './';
 
 var SHELL_FILES = [
-  './',
   PAGE,
   './manifest.webmanifest',
   './icon.svg',
@@ -92,9 +95,7 @@ self.addEventListener('fetch', function (event) {
           return res;
         })
         .catch(function () {
-          return caches.match(PAGE).then(function (hit) {
-            return hit || caches.match('./');
-          });
+          return caches.match(PAGE);
         })
     );
     return;

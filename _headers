@@ -1,0 +1,14 @@
+# Headers Cloudflare Pages sends with every file of the app.
+#
+# The Content-Security-Policy here holds only frame-ancestors, the one
+# directive a <meta> tag cannot carry. The rest of the policy lives in the
+# <meta> at the top of index.html, the single place to edit it: a browser
+# enforces both, so a second full copy here could only drift out of step
+# and block something the page was meant to allow.
+
+/*
+  Content-Security-Policy: frame-ancestors 'none'
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: accelerometer=(), camera=(), display-capture=(), geolocation=(), gyroscope=(), hid=(), magnetometer=(), microphone=(), midi=(), payment=(), serial=(), usb=()
