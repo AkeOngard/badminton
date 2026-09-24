@@ -155,6 +155,8 @@
     --cta-ink: #0B3A2F;
     --rest: #7A5510;
     --rest-soft: #F4E9D2;
+    --plank: #C8AE82;
+    --plank-leg: #A88D60;
     --danger: #B3261E;
     --danger-ink: #FFF4F2;
     --danger-soft: #F6D9D5;
@@ -232,6 +234,8 @@
       --cta-ink: #0B3A2F;
       --rest: #E3BC69;
       --rest-soft: #2E2718;
+      --plank: #6E5A3C;
+      --plank-leg: #57472F;
       --danger: #E4736A;
       --danger-ink: #2A0E0B;
       --danger-soft: #3A1A17;
@@ -289,6 +293,8 @@
     --cta-ink: #0B3A2F;
     --rest: #E3BC69;
     --rest-soft: #2E2718;
+    --plank: #6E5A3C;
+    --plank-leg: #57472F;
     --danger: #E4736A;
     --danger-ink: #2A0E0B;
     --danger-soft: #3A1A17;
@@ -1243,7 +1249,10 @@
      A sixteen-name board was running twenty-five of them. */
   .side .name { box-shadow: inset 0 1px 0 rgba(255, 255, 255, .22); }
   .name {
-    display: block;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: .42em;
     max-width: 100%;
     padding: 6px 12px;
     background: var(--name-fill);
@@ -1256,6 +1265,28 @@
     text-align: center;
     overflow-wrap: anywhere;
   }
+  /* Everyone's own colour and letter, the same on court, on the bench, in the
+     tally and on the big screen. Dark type on a light fill reads on every mat. */
+  .av {
+    flex: none;
+    width: 1.95em;
+    height: 1.95em;
+    margin-left: -.55em;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: var(--av, #D9F25C);
+    color: #10201A;
+    font-family: var(--font-body);
+    font-size: .76em;
+    font-weight: 700;
+    line-height: 1;
+    box-shadow: inset 0 -1px 0 rgba(0, 0, 0, .12);
+  }
+  .name .nm { min-width: 0; overflow-wrap: anywhere; }
+  .stat-list .nm { display: flex; align-items: center; gap: 8px; }
+  .stat-list .nm .av { margin-left: 0; font-size: 11px; }
+
   /* Every name on the board is a button: tap one, then tap another, and the
      two change places. The lime ring is the same one the draw button wears. */
   button.name {
@@ -1410,6 +1441,123 @@
     color: var(--rest);
     font-size: 13.5px;
     padding: 5px 12px;
+  }
+
+  .recap-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-top: 12px;
+    color: var(--ink);
+    font-size: 15px;
+  }
+  .recap-btn svg { width: 20px; height: 20px; }
+  .modal.recap { max-width: 440px; }
+  .recap__img {
+    display: block;
+    width: auto;
+    max-width: 100%;
+    max-height: 56vh;
+    aspect-ratio: 1080 / 1350;
+    margin: 4px auto 12px;
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
+    background: #0B3F33;
+  }
+
+  /* The bench: a glass strip with a plank under the seats, and whoever is
+     next on at the left end. */
+  /* As long as the people on it: a three-seat bench doesn't span the hall. */
+  .bench {
+    width: fit-content;
+    min-width: min(100%, 300px);
+    max-width: 100%;
+    box-sizing: border-box;
+    margin-top: 2px;
+    padding: 12px 14px 20px;
+    border-radius: calc(var(--r-sm) + 9px);
+    background: var(--glass-2);
+    background-image: var(--glass-sheen);
+    box-shadow:
+      inset 0 1px 0 var(--glass-rim),
+      inset 0 0 0 1px var(--glass-edge);
+  }
+  .bench__head {
+    display: flex;
+    align-items: baseline;
+    gap: 10px;
+    margin: 0 0 10px;
+    font-size: 12.5px;
+    color: var(--ink-3);
+  }
+  .bench__head b {
+    font-family: var(--font-display);
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--ink);
+  }
+  .bench__head span { margin-left: auto; }
+  .bench__seats {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px 8px;
+    padding-bottom: 12px;
+  }
+  /* The plank, and two short legs under it. */
+  .bench__seats::after {
+    content: "";
+    position: absolute;
+    left: -4px;
+    right: -4px;
+    bottom: -12px;
+    height: 14px;
+    pointer-events: none;
+    background:
+      linear-gradient(var(--plank), var(--plank)) top / 100% 6px no-repeat,
+      linear-gradient(var(--plank-leg), var(--plank-leg)) 9% 100% / 6px 9px no-repeat,
+      linear-gradient(var(--plank-leg), var(--plank-leg)) 91% 100% / 6px 9px no-repeat;
+    border-radius: 3px;
+  }
+  .seat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 0;
+  }
+  .seat .name {
+    background: var(--chip);
+    border-color: var(--chip-edge);
+    color: var(--ink);
+    font-size: 13.5px;
+    padding: 5px 12px;
+  }
+  .seat--next .name {
+    border-color: var(--accent-line);
+    box-shadow: inset 0 0 0 1px var(--accent-line), 0 4px 12px rgba(14, 40, 33, .12);
+  }
+  .seat__meta {
+    align-self: flex-start;
+    padding-left: 4px;
+    display: flex;
+    gap: 3px;
+    min-height: 14px;
+    align-items: center;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-text);
+    white-space: nowrap;
+  }
+  .seat__meta i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: var(--rest);
+    opacity: .7;
   }
 
   .waiting {
@@ -1766,6 +1914,14 @@
     white-space: pre;
   }
   .stage__more { color: rgba(244, 249, 243, .62); }
+  .stage__who {
+    display: inline-flex;
+    align-items: center;
+    gap: .4em;
+    padding-left: .35em;
+    white-space: nowrap;
+  }
+  .stage__who .av { margin-left: 0; font-size: .7em; }
 
   /* ---------- the opening ----------
      It starts as the exact picture iOS shows while the app loads (splash/),
@@ -2218,6 +2374,13 @@
               <span class="count">ลง / พัก</span>
             </div>
             <ul class="stat-list" id="stats"></ul>
+            <button type="button" class="btn btn--ghost recap-btn" id="recapBtn">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="4" y="3.5" width="16" height="17" rx="3" stroke="currentColor" stroke-width="2" />
+                <path d="M8 15.5 V13 M12 15.5 V9.5 M16 15.5 V11.5" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+              </svg>
+              การ์ดสรุปคืนนี้
+            </button>
           </div>
 
           <p class="footnote">ผังสนามวาดตามสัดส่วนมาตรฐาน BWF 13.40 × 6.10 ม. · เส้นเสิร์ฟสั้น 1.98 ม. จากตาข่าย · เส้นในคือขอบสนามเดี่ยว (กว้าง 5.18 ม.)</p>
@@ -2289,6 +2452,17 @@
   <footer class="stage__next" id="stageNext"></footer>
 </dialog>
 
+<dialog class="modal recap" id="recapDlg" aria-labelledby="recapTitle">
+  <h2 class="modal__title" id="recapTitle">การ์ดสรุปคืนนี้</h2>
+  <img class="recap__img" id="recapImg" alt="">
+  <p class="modal__body">แชร์เข้ากลุ่ม LINE ได้เลย หรือบันทึกเป็นรูป · บน iPhone กดค้างที่รูปเพื่อบันทึกได้ด้วย</p>
+  <div class="modal__actions">
+    <button type="button" class="btn btn--ghost" id="recapClose">ปิด</button>
+    <button type="button" class="btn btn--ghost" id="recapSave">บันทึกรูป</button>
+    <button type="button" class="btn btn--primary" id="recapShare" hidden>แชร์</button>
+  </div>
+</dialog>
+
 <dialog class="modal" id="wipeDlg" aria-labelledby="wipeTitle">
   <h2 class="modal__title" id="wipeTitle">ล้างข้อมูลทั้งหมด?</h2>
   <p class="modal__body">
@@ -2337,7 +2511,9 @@
     played: {},
     rested: {},
     pairs: {},
-    waits: {}
+    waits: {},
+    // Games dealt tonight, for the summary card.
+    games: 0
   };
 
   // The name tapped first, waiting for a second one to change places with.
@@ -2473,6 +2649,64 @@
     return { names: out, dupes: dupes };
   }
 
+  /* ---------- a colour of their own ---------- */
+
+  // Light enough for dark type, far enough apart to tell across a hall.
+  var HUES = ['#D9F25C', '#FFC857', '#FF9B71', '#FF8FC7', '#C3A6FF',
+    '#8FD3FF', '#5EE0C1', '#A8F0A0', '#FFD6A5', '#9DB4FF'];
+  var hueOf = Object.create(null);
+
+  function hashName(s) {
+    var h = 5381;
+    for (var i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0;
+    return Math.abs(h);
+  }
+
+  // Each name starts from a colour its spelling picks, so it keeps it from one
+  // night to the next, and steps on to a free one when that is taken: nobody
+  // shares a colour until all ten are in use.
+  function paintRoster() {
+    hueOf = Object.create(null);
+    var used = [];
+    state.players.forEach(function (name) {
+      var i = hashName(name) % HUES.length;
+      if (used.length < HUES.length) {
+        while (used.indexOf(i) >= 0) i = (i + 1) % HUES.length;
+        used.push(i);
+      }
+      hueOf[name] = HUES[i];
+    });
+  }
+
+  function hueFor(name) { return hueOf[name] || HUES[hashName(name) % HUES.length]; }
+
+  // The letter in the badge. A Thai name that opens with a leading vowel
+  // (เ แ โ ใ ไ) is known by the consonant after it: เบล is บ, not เ.
+  function initialOf(name) {
+    var rest = name.replace(/^[\u0E40-\u0E44]+/, '') || name;
+    var first = Array.from ? Array.from(rest)[0] : rest.charAt(0);
+    return /[\u0E01-\u0E2E]/.test(first) ? first : first.toUpperCase();
+  }
+
+  function fillChip(node, name) {
+    node.textContent = '';
+    var av = document.createElement('span');
+    av.className = 'av';
+    av.setAttribute('aria-hidden', 'true');
+    av.style.setProperty('--av', hueFor(name));
+    av.textContent = initialOf(name);
+    var nm = document.createElement('span');
+    nm.className = 'nm';
+    nm.textContent = name;
+    node.appendChild(av);
+    node.appendChild(nm);
+  }
+
+  function chipName(node) {
+    var nm = node.querySelector('.nm');
+    return nm ? nm.textContent : node.textContent;
+  }
+
   function shuffled(list) {
     var a = list.slice();
     for (var i = a.length - 1; i > 0; i--) {
@@ -2525,6 +2759,7 @@
   }
 
   function recordMatch(match) {
+    state.games = (state.games || 0) + 1;
     match.forEach(function (side) {
       side.forEach(function (name) {
         state.played[name] = (state.played[name] || 0) + 1;
@@ -2962,10 +3197,46 @@
   function sideText(side) { return side.join(' + '); }
   function gameText(m) { return sideText(m[0]) + ' กับ ' + sideText(m[1]); }
 
+  // Where every name on the board stands, by name: the first chip for it in
+  // page order, which is its court if it has one, else its bench seat.
+  function chipsByName() {
+    var out = Object.create(null);
+    Array.prototype.forEach.call(el.rounds.querySelectorAll('button.name'), function (chip) {
+      var n = chipName(chip);
+      if (!out[n]) out[n] = chip;
+    });
+    return out;
+  }
+
+  // After a game ends, the players leaving walk to the bench, the next ones
+  // walk on, and everyone left on the bench shuffles along to their new seat.
+  function walkOver(before, over, filled) {
+    if (!motionOk() || stageOpen()) return;
+    var leaving = Object.create(null);
+    namesIn(over).forEach(function (n) { leaving[n] = true; });
+    var coming = Object.create(null);
+    filled.forEach(function (k) {
+      namesIn(state.rounds[0][k]).forEach(function (n) { coming[n] = true; });
+    });
+    var after = chipsByName();
+    var flights = [];
+    Object.keys(after).forEach(function (n) {
+      var from = before[n];
+      if (!from) return;
+      var to = after[n].getBoundingClientRect();
+      if (Math.abs(to.left - from.left) + Math.abs(to.top - from.top) < 3) return;
+      flights.push({ from: from, dest: after[n], delay: leaving[n] ? 0 : coming[n] ? 160 : 70 });
+    });
+    fly(flights);
+  }
+
   function finishCourt(c) {
     var now = state.rounds[0];
     if (!now || !now[c] || isHole(now[c])) return;
     pick = null;
+    var before = Object.create(null);
+    var places = chipsByName();
+    Object.keys(places).forEach(function (n) { before[n] = places[n].getBoundingClientRect(); });
     var over = now[c];
     state.done.push(over);
     now[c] = [[], []];
@@ -2974,8 +3245,11 @@
     syncSets();
     state.coverage = coverageOf(state.done.concat(flatRounds()), state.players, perCourt());
 
-    dealOnly = filled;
+    // On the board the names walk over instead; the big screen deals the card.
+    var walking = motionOk() && !stageOpen() && !!document.body.animate;
+    dealOnly = walking ? [] : filled;
     try { render(); } finally { dealOnly = null; }
+    if (walking) walkOver(before, over, filled);
     save();
     if (filled.length) sound('next');
 
@@ -2997,6 +3271,7 @@
 
   function resetAll() {
     clearDraw();
+    state.games = 0;
     state.played = {};
     state.rested = {};
     state.pairs = {};
@@ -3012,6 +3287,7 @@
     state.mode = 'doubles';
     state.plan = 'random';
     state.courts = 2;
+    state.games = 0;
     state.played = {};
     state.rested = {};
     state.pairs = {};
@@ -3052,13 +3328,13 @@
     if (!spot) {
       var s = document.createElement('span');
       s.className = 'name';
-      s.textContent = text;
+      fillChip(s, text);
       return s;
     }
     var b = document.createElement('button');
     b.type = 'button';
     b.className = 'name';
-    b.textContent = text;
+    fillChip(b, text);
     b.spot = spot;
     b.title = 'แตะเพื่อสลับตัวกับอีกชื่อหนึ่ง';
     b.setAttribute('aria-pressed', samePlace(pick, spot) ? 'true' : 'false');
@@ -3143,6 +3419,86 @@
 
     card.appendChild(head);
     card.appendChild(plan);
+    return card;
+  }
+
+  /* ---------- the bench ---------- */
+
+  // Everyone off court, in the order they'd go on: first whoever a drawn round
+  // already has down for a game, round by round; then the rest, fewest games
+  // first and longest wait next — the same line a fresh game is drawn from.
+  function benchOrder() {
+    var busy = onCourtNow();
+    var queuedAt = Object.create(null);
+    state.rounds.forEach(function (round, r) {
+      if (!r) return;
+      round.forEach(function (m) {
+        namesIn(m).forEach(function (n) { if (!(n in queuedAt)) queuedAt[n] = r; });
+      });
+    });
+    var far = state.rounds.length + 1;
+    return state.players.filter(function (n) { return !busy[n]; }).sort(function (a, b) {
+      var qa = a in queuedAt ? queuedAt[a] : far;
+      var qb = b in queuedAt ? queuedAt[b] : far;
+      return (qa - qb) ||
+        ((state.played[a] || 0) - (state.played[b] || 0)) ||
+        ((state.waits[b] || 0) - (state.waits[a] || 0)) ||
+        a.localeCompare(b, 'th');
+    }).map(function (n) { return { name: n, round: n in queuedAt ? queuedAt[n] : -1 }; });
+  }
+
+  // Who the next game takes from the front of the bench: the players of the
+  // next drawn round, or in a random draw with none left, one court's worth.
+  function nextOnBench(line) {
+    if (!line.length) return 0;
+    if (line[0].round > 0) {
+      return line.filter(function (s) { return s.round === line[0].round; }).length;
+    }
+    return state.plan === 'random' ? Math.min(perCourt(), line.length) : 0;
+  }
+
+  function benchCard() {
+    var line = benchOrder();
+    if (!line.length) return null;
+    var up = nextOnBench(line);
+
+    var card = document.createElement('div');
+    card.className = 'bench';
+    var head = document.createElement('p');
+    head.className = 'bench__head';
+    var title = document.createElement('b');
+    title.textContent = 'ม้านั่ง · ' + line.length + ' คน';
+    head.appendChild(title);
+    var hint = document.createElement('span');
+    hint.textContent = up ? 'ลงก่อนจากซ้าย' : 'รอสนามว่าง';
+    head.appendChild(hint);
+    card.appendChild(head);
+
+    var seats = document.createElement('div');
+    seats.className = 'bench__seats';
+    line.forEach(function (seat, i) {
+      var box = document.createElement('div');
+      box.className = 'seat' + (i < up ? ' seat--next' : '');
+      // Spots as before: someone a later round has down for a game waits for
+      // it; anyone else is resting. Either can be swapped onto a court.
+      box.appendChild(nameChip(seat.name, seat.round > 0
+        ? { at: 'wait', r: 0, name: seat.name }
+        : { at: 'rest', name: seat.name }));
+      var meta = document.createElement('span');
+      meta.className = 'seat__meta';
+      if (i < up) {
+        // Said once, over the first of the group; the ring marks the rest.
+        if (!i) meta.textContent = seat.round > 0 ? 'ต่อไป · รอบ ' + (seat.round + 1) : 'ต่อไป';
+      } else {
+        // One dot for each game sat out in a row.
+        var waited = Math.min(state.waits[seat.name] || 0, 5);
+        for (var k = 0; k < waited; k++) meta.appendChild(document.createElement('i'));
+        if (waited) meta.setAttribute('title', 'รอมา ' + (state.waits[seat.name] || 0) + ' เกม');
+      }
+      box.appendChild(meta);
+      seats.appendChild(box);
+    });
+    card.appendChild(seats);
     return card;
   }
 
@@ -3235,7 +3591,12 @@
       sec.appendChild(head);
       sec.appendChild(courts);
 
-      var waitingNames = state.waiting[idx] || [];
+      // Round 1 has the bench under it instead: everyone off court right now.
+      if (idx === 0) {
+        var bench = benchCard();
+        if (bench) sec.appendChild(bench);
+      }
+      var waitingNames = idx ? state.waiting[idx] || [] : [];
       if (waitingNames.length) {
         var wait = document.createElement('p');
         wait.className = 'waiting';
@@ -3250,19 +3611,6 @@
 
       wrap.appendChild(sec);
     });
-
-    if (state.resting.length) {
-      var rest = document.createElement('div');
-      rest.className = 'rest';
-      var lab = document.createElement('span');
-      lab.className = 'rest__label';
-      lab.textContent = 'พักชุดนี้ · ' + state.resting.length + ' คน';
-      rest.appendChild(lab);
-      state.resting.forEach(function (name) {
-        rest.appendChild(nameChip(name, { at: 'rest', name: name }));
-      });
-      wrap.appendChild(rest);
-    }
 
     var hint = document.createElement('p');
     hint.className = 'swaphint';
@@ -3330,7 +3678,13 @@
 
       var nm = document.createElement('span');
       nm.className = 'nm';
-      nm.textContent = name;
+      var av = document.createElement('span');
+      av.className = 'av';
+      av.setAttribute('aria-hidden', 'true');
+      av.style.setProperty('--av', hueFor(name));
+      av.textContent = initialOf(name);
+      nm.appendChild(av);
+      nm.appendChild(document.createTextNode(name));
 
       row.appendChild(nm);
       row.appendChild(meter(played, most));
@@ -3372,6 +3726,14 @@
       sub.textContent = note;
       el.feeOut.appendChild(sub);
     }
+  }
+
+  // What each player pays, rounded up the way syncFee() shows it; 0 if unset.
+  function feeEach() {
+    var total = feeValue(el.feeCourt) + feeValue(el.feeShuttles) * feeValue(el.feePrice);
+    var heads = state.players.length;
+    if (!total || !heads) return 0;
+    return Math.ceil(total / heads / ROUND_TO) * ROUND_TO;
   }
 
   function syncFee() {
@@ -3465,7 +3827,7 @@
     var finals = [];
     var i;
     for (i = 0; i < chips.length; i++) {
-      finals.push(chips[i].textContent);
+      finals.push(chipName(chips[i]));
       chips[i].classList.add('name--roll');
     }
 
@@ -3474,12 +3836,12 @@
     rollTimer = setInterval(function () {
       ticks++;
       for (var k = 0; k < chips.length; k++) {
-        chips[k].textContent = pool[Math.floor(Math.random() * pool.length)];
+        fillChip(chips[k], pool[Math.floor(Math.random() * pool.length)]);
       }
       if (ticks < 6) return;
       stopRoll();
       for (var j = 0; j < chips.length; j++) {
-        chips[j].textContent = finals[j];
+        fillChip(chips[j], finals[j]);
         chips[j].classList.remove('name--roll');
         chips[j].classList.add('name--land');
       }
@@ -3655,17 +4017,13 @@
       }
       return wrap;
     }
-    var busy = onCourtNow();
-    var free = state.players.filter(function (n) { return !busy[n]; }).sort(function (a, b) {
-      return ((state.played[a] || 0) - (state.played[b] || 0)) ||
-             ((state.waits[b] || 0) - (state.waits[a] || 0)) || a.localeCompare(b, 'th');
-    });
+    var free = benchOrder().map(function (s) { return s.name; });
     if (!free.length) return null;
     lab.textContent = state.plan === 'random' ? 'คิวถัดไป' : 'พัก';
     free.forEach(function (name) {
       var chip = document.createElement('span');
       chip.className = 'stage__who';
-      chip.textContent = name;
+      fillChip(chip, name);
       wrap.appendChild(chip);
     });
     return wrap;
@@ -3765,11 +4123,292 @@
     el.bigBtn.hidden = true;
   }
 
+  /* ---------- the night on one card ---------- */
+
+  // A picture for the club's group chat: how many games, who played most, the
+  // pair that kept ending up together and what everyone owes. Drawn on a
+  // canvas in the app's own fonts, portrait, the shape a chat shows best.
+  var recap = {
+    dlg: document.getElementById('recapDlg'),
+    img: document.getElementById('recapImg'),
+    btn: document.getElementById('recapBtn'),
+    share: document.getElementById('recapShare'),
+    save: document.getElementById('recapSave'),
+    close: document.getElementById('recapClose'),
+    url: '',
+    file: null
+  };
+
+  var SHUTTLE_PATHS = [
+    ['M10.5 10.5 L17.5 32.5 M37.5 10.5 L30.5 32.5 M10.5 10.5 Q24 3.5 37.5 10.5', 2.4, 1],
+    ['M17.8 8.6 L20.8 32.5 M24 7 L24 32.5 M30.2 8.6 L27.2 32.5 M13.6 21 Q24 25.4 34.4 21', 1.4, .5]
+  ];
+
+  function roundRect(g, x, y, w, h, r) {
+    g.beginPath();
+    g.moveTo(x + r, y);
+    g.arcTo(x + w, y, x + w, y + h, r);
+    g.arcTo(x + w, y + h, x, y + h, r);
+    g.arcTo(x, y + h, x, y, r);
+    g.arcTo(x, y, x + w, y, r);
+    g.closePath();
+  }
+
+  function fitText(g, text, width) {
+    if (g.measureText(text).width <= width) return text;
+    var chars = Array.from ? Array.from(text) : text.split('');
+    while (chars.length > 1 && g.measureText(chars.join('') + '…').width > width) chars.pop();
+    return chars.join('') + '…';
+  }
+
+  function badge(g, x, y, r, name) {
+    g.fillStyle = hueFor(name);
+    g.beginPath();
+    g.arc(x, y, r, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = '#10201A';
+    g.font = '700 ' + Math.round(r * 1.05) + 'px "IBM Plex Sans Thai", system-ui, sans-serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText(initialOf(name), x, y + r * .06);
+    g.textAlign = 'left';
+    g.textBaseline = 'alphabetic';
+  }
+
+  // The pair that shared a court most tonight, if any did more than once.
+  function regulars() {
+    var best = null;
+    Object.keys(state.pairs).forEach(function (k) {
+      var n = state.pairs[k];
+      if (n < 2 || (best && best.n >= n)) return;
+      var two = k.split('\u0000');
+      if (state.players.indexOf(two[0]) < 0 || state.players.indexOf(two[1]) < 0) return;
+      best = { a: two[0], b: two[1], n: n };
+    });
+    return best;
+  }
+
+  function drawRecap() {
+    var W = 1080, H = 1350, P = 80;
+    var cv = document.createElement('canvas');
+    cv.width = W;
+    cv.height = H;
+    var g = cv.getContext('2d');
+    var ink = '#F4F9F3', soft = 'rgba(244, 249, 243, .68)', lime = '#D9F25C';
+    var display = '"Chakra Petch", "IBM Plex Sans Thai", system-ui, sans-serif';
+    var body = '"IBM Plex Sans Thai", system-ui, sans-serif';
+
+    g.fillStyle = '#0B3F33';
+    g.fillRect(0, 0, W, H);
+    var glow = g.createRadialGradient(W / 2, H * .3, 40, W / 2, H * .3, W);
+    glow.addColorStop(0, 'rgba(255, 255, 255, .09)');
+    glow.addColorStop(1, 'rgba(0, 0, 0, .25)');
+    g.fillStyle = glow;
+    g.fillRect(0, 0, W, H);
+
+    // A court drawn faintly behind it all, the long way down the card.
+    g.save();
+    g.translate(W / 2, H * .56);
+    g.rotate(Math.PI / 2);
+    var cs = (H * .82) / 1544;
+    g.scale(cs, cs);
+    g.translate(-772, -351);
+    g.strokeStyle = 'rgba(244, 249, 243, .07)';
+    g.lineWidth = 2 / cs;
+    g.stroke(new Path2D('M102 46 H1442 V656 H102 Z M102 92 H1442 M102 610 H1442 M574 46 V656 ' +
+      'M970 46 V656 M178 46 V656 M1366 46 V656 M102 351 H574 M970 351 H1442 M772 46 V656'));
+    g.restore();
+
+    // The mark and the app's name.
+    g.save();
+    g.translate(P - 6, P - 10);
+    g.scale(1.5, 1.5);
+    g.lineCap = 'round';
+    g.lineJoin = 'round';
+    SHUTTLE_PATHS.forEach(function (sp) {
+      g.globalAlpha = sp[2];
+      g.strokeStyle = lime;
+      g.lineWidth = sp[1];
+      g.stroke(new Path2D(sp[0]));
+    });
+    g.globalAlpha = 1;
+    g.fillStyle = lime;
+    g.fill(new Path2D('M17.5 31.8 h13 a6.5 6.5 0 0 1 -13 0 z'));
+    g.restore();
+    g.fillStyle = soft;
+    g.font = '600 32px ' + display;
+    g.fillText('สุ่มคู่ลงสนาม', P + 70, P + 34);
+
+    g.fillStyle = ink;
+    g.font = '700 84px ' + display;
+    g.fillText('สรุปก๊วนคืนนี้', P, 250);
+    g.fillStyle = soft;
+    g.font = '400 32px ' + body;
+    var when = new Date();
+    try {
+      g.fillText(when.toLocaleDateString('th-TH', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }), P, 306);
+    } catch (e) { g.fillText(when.toDateString(), P, 306); }
+
+    // Three numbers across.
+    var games = state.games || Math.round(state.players.reduce(function (n, p) {
+      return n + (state.played[p] || 0);
+    }, 0) / perCourt());
+    var played = state.players.filter(function (p) { return state.played[p]; });
+    var each = feeEach();
+    var tiles = [
+      [String(games), 'เกม'],
+      [String(played.length), 'คนลงสนาม'],
+      each ? [String(each), 'บาท / คน'] : [String(state.courts), 'สนาม']
+    ];
+    var gap = 24, tw = (W - P * 2 - gap * 2) / 3, ty = 360, th = 200;
+    tiles.forEach(function (t, i) {
+      var x = P + i * (tw + gap);
+      roundRect(g, x, ty, tw, th, 28);
+      g.fillStyle = 'rgba(255, 255, 255, .07)';
+      g.fill();
+      g.strokeStyle = 'rgba(255, 255, 255, .1)';
+      g.lineWidth = 2;
+      g.stroke();
+      g.fillStyle = lime;
+      g.font = '700 92px ' + display;
+      g.fillText(fitText(g, t[0], tw - 56), x + 30, ty + 112);
+      g.fillStyle = soft;
+      g.font = '500 30px ' + body;
+      g.fillText(t[1], x + 32, ty + 164);
+    });
+
+    // Who played most.
+    var y = 650;
+    g.fillStyle = lime;
+    g.font = '700 36px ' + display;
+    g.fillText('ลงสนามมากที่สุด', P, y);
+    var board = played.slice().sort(function (a, b) {
+      return (state.played[b] || 0) - (state.played[a] || 0) || a.localeCompare(b, 'th');
+    });
+    var shown = board.slice(0, 5);
+    y += 36;
+    shown.forEach(function (name, i) {
+      var cy = y + 44;
+      badge(g, P + 30, cy, 30, name);
+      g.fillStyle = ink;
+      g.font = '500 40px ' + body;
+      g.fillText(fitText(g, name, W - P * 2 - 260), P + 82, cy + 14);
+      g.textAlign = 'right';
+      g.font = '600 36px ' + display;
+      g.fillStyle = i === 0 ? lime : ink;
+      g.fillText((state.played[name] || 0) + ' เกม', W - P, cy + 13);
+      g.textAlign = 'left';
+      if (i < shown.length - 1) {
+        g.fillStyle = 'rgba(255, 255, 255, .08)';
+        g.fillRect(P, y + 88, W - P * 2, 2);
+      }
+      y += 90;
+    });
+    if (!shown.length) {
+      g.fillStyle = soft;
+      g.font = '400 34px ' + body;
+      g.fillText('ยังไม่มีใครลงสนาม', P, y + 56);
+      y += 90;
+    }
+    if (board.length > shown.length) {
+      var lo = state.played[board[board.length - 1]] || 0;
+      var hi = state.played[board[0]] || 0;
+      g.fillStyle = soft;
+      g.font = '400 30px ' + body;
+      g.fillText('ทุกคนได้ลง ' + (lo === hi ? hi : lo + '–' + hi) + ' เกม', P, y + 44);
+      y += 60;
+    }
+
+    // The pair that kept ending up on the same side (or across, in singles).
+    var pair = regulars();
+    if (pair && y < H - 230) {
+      y += 40;
+      roundRect(g, P, y, W - P * 2, 112, 28);
+      g.fillStyle = 'rgba(217, 242, 92, .1)';
+      g.fill();
+      g.fillStyle = lime;
+      g.font = '700 30px ' + display;
+      g.fillText(state.mode === 'singles' ? 'คู่ปรับประจำคืน' : 'คู่ขาประจำคืน', P + 30, y + 46);
+      g.fillStyle = ink;
+      g.font = '500 34px ' + body;
+      g.fillText(fitText(g, pair.a + ' + ' + pair.b + ' · ' +
+        (state.mode === 'singles' ? 'เจอกัน ' : 'ด้วยกัน ') + pair.n + ' ครั้ง', W - P * 2 - 60), P + 30, y + 92);
+    }
+
+    g.fillStyle = 'rgba(244, 249, 243, .5)';
+    g.font = '400 26px ' + body;
+    g.textAlign = 'center';
+    var where = /^https?:$/.test(location.protocol) ? ' · ' + location.host : '';
+    g.fillText('สุ่มคู่ลงสนาม' + where, W / 2, H - 56);
+    g.textAlign = 'left';
+    return cv;
+  }
+
+  function stamp() {
+    var d = new Date();
+    return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0') + '-' + String(d.getDate()).padStart(2, '0');
+  }
+
+  function openRecap() {
+    if (!state.players.some(function (p) { return state.played[p]; })) {
+      setStatus('ยังไม่มีเกมให้สรุป — กด “' + drawLabel() + '” แล้วเล่นกันก่อน', 'warn');
+      return;
+    }
+    // The canvas draws with whatever fonts are ready, so wait for the app's own.
+    var ready = document.fonts && document.fonts.load ? Promise.all([
+      document.fonts.load('700 84px "Chakra Petch"', 'สรุป'),
+      document.fonts.load('500 40px "IBM Plex Sans Thai"', 'ก'),
+      document.fonts.load('700 40px "IBM Plex Sans Thai"', 'ก')
+    ]).catch(function () {}) : Promise.resolve();
+    ready.then(function () {
+      var cv = drawRecap();
+      recap.url = cv.toDataURL('image/png');
+      recap.img.src = recap.url;
+      recap.img.alt = 'การ์ดสรุปก๊วนคืนนี้ ' + stamp();
+      recap.file = null;
+      recap.share.hidden = true;
+      // Made ready now, so the share button can hand it over the moment it's
+      // tapped: iOS only shares from inside the tap itself.
+      if (cv.toBlob && window.File && navigator.canShare) {
+        cv.toBlob(function (blob) {
+          if (!blob) return;
+          var file = new File([blob], 'badminton-' + stamp() + '.png', { type: 'image/png' });
+          try {
+            if (navigator.canShare({ files: [file] })) {
+              recap.file = file;
+              recap.share.hidden = false;
+            }
+          } catch (e) { /* no file sharing here; saving still works */ }
+        }, 'image/png');
+      }
+      if (typeof recap.dlg.showModal === 'function') recap.dlg.showModal();
+      else window.open(recap.url);
+    });
+  }
+
+  recap.btn.addEventListener('click', openRecap);
+  recap.close.addEventListener('click', function () { recap.dlg.close(); });
+  recap.save.addEventListener('click', function () {
+    var a = document.createElement('a');
+    a.href = recap.url;
+    a.download = 'badminton-' + stamp() + '.png';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+  });
+  recap.share.addEventListener('click', function () {
+    if (!recap.file) return;
+    navigator.share({ files: [recap.file], title: 'สรุปก๊วนคืนนี้' }).catch(function () {
+      /* closed the share sheet — nothing to do */
+    });
+  });
+
   /* ---------- input wiring ---------- */
 
   function syncNames() {
     var parsed = parseNames(el.names.value);
     state.players = parsed.names;
+    paintRoster();
     el.nameCount.textContent = parsed.names.length + ' คน';
     syncSetupBar();
     el.nameHint.textContent = parsed.dupes
@@ -3833,7 +4472,7 @@
         names: el.names.value, mode: state.mode, plan: state.plan, courts: state.courts,
         fee: feeState(), savedAt: Date.now(),
         played: state.played, rested: state.rested, pairs: state.pairs,
-        waits: state.waits,
+        waits: state.waits, games: state.games,
         rounds: state.rounds, waiting: state.waiting,
         resting: state.resting, coverage: state.coverage, done: state.done
       }));
@@ -4130,19 +4769,19 @@
   // place to the new one above everything; the real chip shows when it lands.
   // It flies as a copy because the mats clip anything that leaves them.
   var FLY_STYLE = ['backgroundColor', 'color', 'borderRadius', 'fontFamily',
-    'fontSize', 'fontWeight', 'lineHeight', 'paddingLeft', 'paddingRight', 'boxShadow'];
+    'fontSize', 'fontWeight', 'lineHeight', 'paddingLeft', 'paddingRight', 'boxShadow', 'columnGap'];
 
   function fly(flights) {
     if (!motionOk() || !document.body.animate) return;
     flights.forEach(function (f) {
-      var dest = chipAt(f.to);
+      var dest = f.dest || chipAt(f.to);
       if (!dest || !f.from) return;
       var to = dest.getBoundingClientRect();
       var look = getComputedStyle(dest);
       var ghost = document.createElement('span');
       ghost.className = 'ghost';
       ghost.setAttribute('aria-hidden', 'true');
-      ghost.textContent = dest.textContent;
+      ghost.innerHTML = dest.innerHTML;
       FLY_STYLE.forEach(function (k) { ghost.style[k] = look[k]; });
       ghost.style.border = look.borderTopWidth + ' ' + look.borderTopStyle + ' ' + look.borderTopColor;
       ghost.style.left = f.from.left + 'px';
@@ -4158,7 +4797,7 @@
         { transform: 'translate(0, 0) scale(1)', width: f.from.width + 'px' },
         { transform: 'translate(' + dx / 2 + 'px, ' + (dy / 2 - 14) + 'px) scale(1.08)', offset: .5 },
         { transform: 'translate(' + dx + 'px, ' + dy + 'px) scale(1)', width: to.width + 'px' }
-      ], { duration: 480, easing: 'cubic-bezier(.45, .75, .2, 1)' });
+      ], { duration: 480, delay: f.delay || 0, easing: 'cubic-bezier(.45, .75, .2, 1)' });
       var done = function () {
         if (ghost.parentNode) ghost.parentNode.removeChild(ghost);
         dest.style.visibility = '';
@@ -4515,6 +5154,7 @@
       state.rested = countsFrom(saved.rested);
       state.pairs = countsFrom(saved.pairs);
       state.waits = countsFrom(saved.waits);
+      state.games = typeof saved.games === 'number' && saved.games > 0 ? Math.floor(saved.games) : 0;
       // The session is picked up as it was left, drawn or not. Drawing here
       // instead would add a round nobody played to the tally just restored.
       resumed = true;
