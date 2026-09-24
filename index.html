@@ -1014,6 +1014,35 @@
   .fee__row input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
   .fee__row input:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
   .fee__unit { font-size: 12px; color: var(--ink-3); }
+  /* The organiser's PromptPay number: once it is valid, the night's summary
+     card carries a QR that asks each payer for exactly their share. */
+  .fee__pp {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px;
+    margin-top: 10px;
+    font-size: 13.5px;
+    color: var(--ink-2);
+  }
+  .fee__pp input {
+    font-family: var(--font-mono);
+    font-size: 14px;
+    letter-spacing: .04em;
+    font-variant-numeric: tabular-nums;
+    color: var(--ink);
+    background: var(--recess);
+    border: 0;
+    box-shadow: inset 0 1px 2px var(--recess);
+    border-radius: var(--r-sm);
+    padding: 9px 11px;
+    width: 100%;
+  }
+  .fee__pp input::placeholder { font-family: var(--font-body); letter-spacing: 0; color: var(--ink-3); }
+  .fee__pp input:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+  .fee__pp input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--danger); }
+  #feePromptPayHint { margin-top: 5px; line-height: 1.5; }
+  #feePromptPayHint[data-kind="ok"] { color: var(--accent-text); }
+  #feePromptPayHint[data-kind="warn"] { color: var(--danger); }
   .fee__out {
     display: flex;
     flex-direction: column;
@@ -1631,7 +1660,7 @@
   /* Safari on iOS zooms the whole page in when a field under 16px takes focus,
      and leaves it zoomed. Touch pointers get the bigger text to stop it. */
   @media (hover: none) and (pointer: coarse) {
-    textarea, .fee__row input { font-size: 16px; }
+    textarea, .fee__row input, .fee__pp input { font-size: 16px; }
   }
 
   /* ---------- the big screen ----------
@@ -2297,6 +2326,12 @@
               </label>
             </div>
             <div class="fee__out" id="feeOut"></div>
+            <label class="fee__pp">
+              <span>รับเงินผ่านพร้อมเพย์</span>
+              <input type="text" id="feePromptPay" inputmode="numeric" autocomplete="off"
+                     spellcheck="false" maxlength="24" placeholder="เบอร์มือถือ หรือเลขบัตรประชาชน">
+            </label>
+            <p class="hint" id="feePromptPayHint"></p>
           </div>
 
           <div class="field">
@@ -2462,6 +2497,8 @@
     feePrice: document.getElementById('feePrice'),
     feeCount: document.getElementById('feeCount'),
     feeOut: document.getElementById('feeOut'),
+    feePromptPay: document.getElementById('feePromptPay'),
+    feePromptPayHint: document.getElementById('feePromptPayHint'),
     planHint: document.getElementById('planHint'),
     courtSeg: document.getElementById('courtSeg'),
     courtHint: document.getElementById('courtHint'),
@@ -3664,7 +3701,10 @@
   }
 
   function feeState() {
-    return { court: el.feeCourt.value, shuttles: el.feeShuttles.value, price: el.feePrice.value };
+    return {
+      court: el.feeCourt.value, shuttles: el.feeShuttles.value, price: el.feePrice.value,
+      promptpay: el.feePromptPay.value
+    };
   }
 
   function applyFee(raw) {
@@ -3675,6 +3715,341 @@
         if (typeof v === 'number') v = String(v);
         if (typeof v === 'string' && (v === '' || isFinite(parseFloat(v)))) entry[1].value = v;
       });
+    // Digits and the usual separators only; anything else was not typed here.
+    var pp = raw.promptpay;
+    el.feePromptPay.value = typeof pp === 'string' && /^[0-9 -]{0,24}$/.test(pp) ? pp : '';
+    syncPromptPay();
+  }
+
+  /* ---------- PromptPay: the payload Thai banking apps read ---------- */
+
+  function ppDigits(text) { return String(text || '').replace(/[^0-9]/g, ''); }
+
+  // Thai national ID: the last digit checks the first twelve.
+  function thaiIdOk(d) {
+    var sum = 0;
+    for (var i = 0; i < 12; i++) sum += +d[i] * (13 - i);
+    return (11 - sum % 11) % 10 === +d[12];
+  }
+
+  // 'phone', 'id' or 'ewallet' when the number can be a PromptPay ID; else why not.
+  function ppCheck(text) {
+    var d = ppDigits(text);
+    if (!d) return { ok: false, empty: true };
+    if (/^0[689]\d{8}$/.test(d)) return { ok: true, kind: 'phone', digits: d };
+    if (d.length === 10) return { ok: false, why: 'เบอร์มือถือต้องขึ้นต้นด้วย 06 08 หรือ 09' };
+    if (d.length === 13) {
+      return thaiIdOk(d)
+        ? { ok: true, kind: 'id', digits: d }
+        : { ok: false, why: 'เลขบัตรประชาชนไม่ถูกต้อง — ลองเช็กทีละหลักอีกครั้ง' };
+    }
+    if (d.length === 15) return { ok: true, kind: 'ewallet', digits: d };
+    return { ok: false, why: 'ใส่เบอร์มือถือ 10 หลัก หรือเลขบัตรประชาชน 13 หลัก (ตอนนี้ ' + d.length + ' หลัก)' };
+  }
+
+  // Shown instead of the whole number wherever people can read it.
+  function ppMasked(check) {
+    var d = check.digits;
+    if (check.kind === 'phone') return d.slice(0, 3) + '-xxx-' + d.slice(6);
+    return (check.kind === 'id' ? 'เลขบัตร' : 'วอลเล็ต') + ' ••••' + d.slice(-4);
+  }
+
+  function tlv(tag, value) { return tag + ('0' + value.length).slice(-2) + value; }
+
+  // CRC-16/CCITT-FALSE, the checksum the EMV payload ends with.
+  function crc16(text) {
+    var crc = 0xFFFF;
+    for (var i = 0; i < text.length; i++) {
+      crc ^= text.charCodeAt(i) << 8;
+      for (var b = 0; b < 8; b++) {
+        crc = crc & 0x8000 ? ((crc << 1) ^ 0x1021) & 0xFFFF : (crc << 1) & 0xFFFF;
+      }
+    }
+    return crc;
+  }
+
+  // EMVCo merchant-presented QR, PromptPay flavour. With an amount the payer's
+  // app fills it in and locks it; without one they type it themselves.
+  function promptPayPayload(check, amount) {
+    var tag = check.kind === 'phone' ? '01' : check.kind === 'id' ? '02' : '03';
+    var target = check.kind === 'phone' ? '0066' + check.digits.slice(1) : check.digits;
+    var body = tlv('00', '01') +
+      tlv('01', amount ? '12' : '11') +
+      tlv('29', tlv('00', 'A000000677010111') + tlv(tag, target)) +
+      tlv('58', 'TH') +
+      tlv('53', '764') +
+      (amount ? tlv('54', amount.toFixed(2)) : '') +
+      '6304';
+    return body + ('000' + crc16(body).toString(16).toUpperCase()).slice(-4);
+  }
+
+  function syncPromptPay() {
+    var check = ppCheck(el.feePromptPay.value);
+    var hint = el.feePromptPayHint;
+    el.feePromptPay.setAttribute('aria-invalid', check.ok || check.empty ? 'false' : 'true');
+    if (check.empty) {
+      hint.removeAttribute('data-kind');
+      hint.textContent = 'ใส่แล้วการ์ดสรุปคืนนี้จะมี QR รับเงิน คนจ่ายสแกนแล้วยอดขึ้นให้เอง';
+    } else if (check.ok) {
+      hint.setAttribute('data-kind', 'ok');
+      hint.textContent = '✓ ' + ppMasked(check) + ' — QR รับเงินจะอยู่บนการ์ดสรุปคืนนี้';
+    } else {
+      hint.setAttribute('data-kind', 'warn');
+      hint.textContent = check.why;
+    }
+  }
+
+  /* ---------- a QR code, drawn here rather than fetched ----------
+     The app loads no outside script and must work with no signal, so the QR is
+     made in the page. Byte mode, error correction M, versions 1–10: a PromptPay
+     payload is 60–90 characters, which lands on version 4–6. */
+
+  // Per version at level M: [ecc codewords per block,
+  //   blocks in group 1, data codewords each, blocks in group 2, data codewords each]
+  var QR_M = [null,
+    [10, 1, 16, 0, 0], [16, 1, 28, 0, 0], [26, 1, 44, 0, 0], [18, 2, 32, 0, 0],
+    [24, 2, 43, 0, 0], [16, 4, 27, 0, 0], [18, 4, 31, 0, 0], [22, 2, 38, 2, 39],
+    [22, 3, 36, 2, 37], [26, 4, 43, 1, 44]];
+
+  var GF_EXP = [];
+  var GF_LOG = [];
+  (function () {
+    var x = 1;
+    for (var i = 0; i < 255; i++) {
+      GF_EXP[i] = x;
+      GF_LOG[x] = i;
+      x <<= 1;
+      if (x & 0x100) x ^= 0x11D;
+    }
+    for (i = 255; i < 512; i++) GF_EXP[i] = GF_EXP[i - 255];
+  }());
+
+  function gfMul(a, b) { return a && b ? GF_EXP[GF_LOG[a] + GF_LOG[b]] : 0; }
+
+  function rsGenerator(degree) {
+    var g = [1];
+    for (var i = 0; i < degree; i++) {
+      var next = [];
+      for (var j = 0; j <= g.length; j++) next.push(0);
+      for (j = 0; j < g.length; j++) {
+        next[j] ^= g[j];
+        next[j + 1] ^= gfMul(g[j], GF_EXP[i]);
+      }
+      g = next;
+    }
+    return g;
+  }
+
+  function rsRemainder(data, gen) {
+    var rem = [];
+    for (var i = 1; i < gen.length; i++) rem.push(0);
+    data.forEach(function (d) {
+      var factor = d ^ rem.shift();
+      rem.push(0);
+      for (var k = 0; k < rem.length; k++) rem[k] ^= gfMul(gen[k + 1], factor);
+    });
+    return rem;
+  }
+
+  function qrAlignment(ver) {
+    if (ver === 1) return [];
+    var size = ver * 4 + 17;
+    var count = Math.floor(ver / 7) + 2;
+    var step = Math.ceil((ver * 4 + 4) / (count * 2 - 2)) * 2;
+    var out = [6];
+    for (var pos = size - 7; out.length < count; pos -= step) out.splice(1, 0, pos);
+    return out;
+  }
+
+  function qrMask(mask, x, y) {
+    switch (mask) {
+      case 0: return (x + y) % 2 === 0;
+      case 1: return y % 2 === 0;
+      case 2: return x % 3 === 0;
+      case 3: return (x + y) % 3 === 0;
+      case 4: return (Math.floor(x / 3) + Math.floor(y / 2)) % 2 === 0;
+      case 5: return x * y % 2 + x * y % 3 === 0;
+      case 6: return (x * y % 2 + x * y % 3) % 2 === 0;
+      default: return ((x + y) % 2 + x * y % 3) % 2 === 0;
+    }
+  }
+
+  // The four penalty rules of the standard: the mask that scores lowest reads best.
+  function qrPenalty(m, size) {
+    var score = 0, x, y, dark = 0;
+    function lines(get) {
+      for (var a = 0; a < size; a++) {
+        var run = 1;
+        var seq = '';
+        for (var b = 0; b < size; b++) {
+          var v = get(a, b);
+          seq += v ? '1' : '0';
+          if (b > 0 && v === get(a, b - 1)) {
+            run++;
+            if (run === 5) score += 3; else if (run > 5) score += 1;
+          } else run = 1;
+        }
+        // A finder look-alike with four light modules on either side; past the
+        // edge is the quiet zone, which is light too.
+        var padded = '0000' + seq + '0000';
+        ['00001011101', '10111010000'].forEach(function (pat) {
+          for (var at = padded.indexOf(pat); at !== -1; at = padded.indexOf(pat, at + 1)) score += 40;
+        });
+      }
+    }
+    lines(function (r, c) { return m[r][c]; });
+    lines(function (c, r) { return m[r][c]; });
+    for (y = 0; y < size - 1; y++) {
+      for (x = 0; x < size - 1; x++) {
+        var v = m[y][x];
+        if (v === m[y][x + 1] && v === m[y + 1][x] && v === m[y + 1][x + 1]) score += 3;
+      }
+    }
+    for (y = 0; y < size; y++) for (x = 0; x < size; x++) if (m[y][x]) dark++;
+    score += Math.floor(Math.abs(dark * 20 - size * size * 10) / (size * size)) * 10;
+    return score;
+  }
+
+  // A QR code for an ASCII text, as rows of true (dark) / false (light).
+  function qrMatrix(text) {
+    var bytes = [];
+    for (var i = 0; i < text.length; i++) bytes.push(text.charCodeAt(i) & 0xFF);
+
+    var ver, spec, dataCw, ccBits;
+    for (ver = 1; ver <= 10; ver++) {
+      spec = QR_M[ver];
+      dataCw = spec[1] * spec[2] + spec[3] * spec[4];
+      ccBits = ver < 10 ? 8 : 16;
+      if (4 + ccBits + bytes.length * 8 <= dataCw * 8) break;
+    }
+    if (ver > 10) return null;
+
+    var bits = [];
+    function put(val, len) { for (var k = len - 1; k >= 0; k--) bits.push((val >>> k) & 1); }
+    put(4, 4);
+    put(bytes.length, ccBits);
+    bytes.forEach(function (b) { put(b, 8); });
+    var cap = dataCw * 8;
+    put(0, Math.min(4, cap - bits.length));
+    while (bits.length % 8) bits.push(0);
+    for (var pad = 0xEC; bits.length < cap; pad ^= 0xEC ^ 0x11) put(pad, 8);
+
+    var cw = [];
+    for (i = 0; i < bits.length; i += 8) {
+      var byte = 0;
+      for (var k = 0; k < 8; k++) byte = (byte << 1) | bits[i + k];
+      cw.push(byte);
+    }
+
+    var gen = rsGenerator(spec[0]);
+    var blocks = [];
+    var at = 0;
+    [[spec[1], spec[2]], [spec[3], spec[4]]].forEach(function (grp) {
+      for (var b = 0; b < grp[0]; b++) {
+        var d = cw.slice(at, at + grp[1]);
+        at += grp[1];
+        blocks.push({ data: d, ecc: rsRemainder(d, gen) });
+      }
+    });
+    var stream = [];
+    var longest = blocks[blocks.length - 1].data.length;
+    for (i = 0; i < longest; i++) {
+      blocks.forEach(function (b) { if (i < b.data.length) stream.push(b.data[i]); });
+    }
+    for (i = 0; i < spec[0]; i++) blocks.forEach(function (b) { stream.push(b.ecc[i]); });
+
+    var size = ver * 4 + 17;
+    var m = [], fn = [];
+    for (var r = 0; r < size; r++) {
+      m.push([]);
+      fn.push([]);
+      for (var c = 0; c < size; c++) { m[r].push(false); fn[r].push(false); }
+    }
+    function set(x, y, dark) { m[y][x] = dark; fn[y][x] = true; }
+
+    for (i = 0; i < size; i++) { set(6, i, i % 2 === 0); set(i, 6, i % 2 === 0); }
+    [[3, 3], [size - 4, 3], [3, size - 4]].forEach(function (p) {
+      for (var dy = -4; dy <= 4; dy++) {
+        for (var dx = -4; dx <= 4; dx++) {
+          var x = p[0] + dx, y = p[1] + dy;
+          if (x < 0 || y < 0 || x >= size || y >= size) continue;
+          var dist = Math.max(Math.abs(dx), Math.abs(dy));
+          set(x, y, dist !== 2 && dist !== 4);
+        }
+      }
+    });
+    var align = qrAlignment(ver);
+    align.forEach(function (ay, ai) {
+      align.forEach(function (ax, aj) {
+        var last = align.length - 1;
+        if ((ai === 0 && aj === 0) || (ai === 0 && aj === last) || (ai === last && aj === 0)) return;
+        for (var dy = -2; dy <= 2; dy++) {
+          for (var dx = -2; dx <= 2; dx++) set(ax + dx, ay + dy, Math.max(Math.abs(dx), Math.abs(dy)) !== 1);
+        }
+      });
+    });
+
+    function drawFormat(mask) {
+      var data = mask; // level M is 00
+      var rem = data;
+      for (var n = 0; n < 10; n++) rem = (rem << 1) ^ ((rem >>> 9) * 0x537);
+      var fbits = ((data << 10) | rem) ^ 0x5412;
+      function bit(n) { return ((fbits >>> n) & 1) === 1; }
+      for (n = 0; n <= 5; n++) set(8, n, bit(n));
+      set(8, 7, bit(6));
+      set(8, 8, bit(7));
+      set(7, 8, bit(8));
+      for (n = 9; n < 15; n++) set(14 - n, 8, bit(n));
+      for (n = 0; n < 8; n++) set(size - 1 - n, 8, bit(n));
+      for (n = 8; n < 15; n++) set(8, size - 15 + n, bit(n));
+      set(8, size - 8, true);
+    }
+    drawFormat(0); // reserves the format areas before the data goes in
+
+    if (ver >= 7) {
+      var vrem = ver;
+      for (i = 0; i < 12; i++) vrem = (vrem << 1) ^ ((vrem >>> 11) * 0x1F25);
+      var vbits = (ver << 12) | vrem;
+      for (i = 0; i < 18; i++) {
+        var on = ((vbits >>> i) & 1) === 1;
+        var a = size - 11 + i % 3, b = Math.floor(i / 3);
+        set(a, b, on);
+        set(b, a, on);
+      }
+    }
+
+    var bi = 0;
+    for (var right = size - 1; right >= 1; right -= 2) {
+      if (right === 6) right = 5;
+      for (var vert = 0; vert < size; vert++) {
+        for (var j = 0; j < 2; j++) {
+          var x = right - j;
+          var y = ((right + 1) & 2) === 0 ? size - 1 - vert : vert;
+          if (fn[y][x] || bi >= stream.length * 8) continue;
+          m[y][x] = ((stream[bi >>> 3] >>> (7 - (bi & 7))) & 1) === 1;
+          bi++;
+        }
+      }
+    }
+
+    function applyMask(mask) {
+      for (var yy = 0; yy < size; yy++) {
+        for (var xx = 0; xx < size; xx++) {
+          if (!fn[yy][xx] && qrMask(mask, xx, yy)) m[yy][xx] = !m[yy][xx];
+        }
+      }
+    }
+    var best = 0, bestScore = Infinity;
+    for (var mask = 0; mask < 8; mask++) {
+      applyMask(mask);
+      drawFormat(mask);
+      var s = qrPenalty(m, size);
+      if (s < bestScore) { bestScore = s; best = mask; }
+      applyMask(mask);
+    }
+    applyMask(best);
+    drawFormat(best);
+    return m;
   }
 
   /* ---------- dealing a fresh draw ---------- */
@@ -4097,8 +4472,52 @@
     return best;
   }
 
+  // The QR panel: the code on white, as every banking app expects to read it,
+  // with a quiet zone of at least four modules, and the share it asks for.
+  function drawPayPanel(g, top, qr, check, each, P, W, lime, ink, soft, display, body) {
+    var ph = 380;
+    roundRect(g, P, top, W - P * 2, ph, 36);
+    g.fillStyle = 'rgba(255, 255, 255, .07)';
+    g.fill();
+    g.strokeStyle = 'rgba(217, 242, 92, .35)';
+    g.lineWidth = 2;
+    g.stroke();
+
+    var tile = 324, tx = P + 28, ty = top + 28;
+    roundRect(g, tx, ty, tile, tile, 22);
+    g.fillStyle = '#FFFFFF';
+    g.fill();
+    var n = qr.length;
+    var mod = Math.floor(tile / (n + 8));
+    var ox = tx + Math.floor((tile - n * mod) / 2);
+    var oy = ty + Math.floor((tile - n * mod) / 2);
+    g.fillStyle = '#0A1F19';
+    for (var r = 0; r < n; r++) {
+      for (var c = 0; c < n; c++) if (qr[r][c]) g.fillRect(ox + c * mod, oy + r * mod, mod, mod);
+    }
+
+    var x = tx + tile + 36, width = W - P - 28 - x;
+    g.fillStyle = lime;
+    g.font = '700 34px ' + display;
+    g.fillText('สแกนจ่ายค่าก๊วน', x, top + 82);
+    g.fillStyle = ink;
+    g.font = '700 58px ' + display;
+    g.fillText(fitText(g, each ? 'คนละ ' + baht(each) + ' บาท' : 'ใส่ยอดตอนโอน', width), x, top + 160);
+    g.fillStyle = soft;
+    g.font = '500 30px ' + body;
+    g.fillText(fitText(g, 'พร้อมเพย์ ' + ppMasked(check), width), x, top + 222);
+    g.font = '400 26px ' + body;
+    g.fillText(fitText(g, 'เปิดแอปธนาคาร สแกนจากรูปนี้', width), x, top + 282);
+    g.fillText(fitText(g, each ? 'ยอดขึ้นให้เอง ไม่ต้องพิมพ์' : 'แล้วพิมพ์ยอดเอง', width), x, top + 320);
+  }
+
   function drawRecap() {
-    var W = 1080, H = 1350, P = 80;
+    // The card is laid out for 1350 tall; a PromptPay number adds a panel below.
+    var BASE_H = 1350, PAY_H = 440;
+    var each = feeEach();
+    var pay = ppCheck(el.feePromptPay.value);
+    var qr = pay.ok ? qrMatrix(promptPayPayload(pay, each)) : null;
+    var W = 1080, H = BASE_H + (qr ? PAY_H : 0), P = 80;
     var cv = document.createElement('canvas');
     cv.width = W;
     cv.height = H;
@@ -4163,7 +4582,6 @@
       return n + (state.played[p] || 0);
     }, 0) / perCourt());
     var played = state.players.filter(function (p) { return state.played[p]; });
-    var each = feeEach();
     var tiles = [
       [String(games), 'เกม'],
       [String(played.length), 'คนลงสนาม'],
@@ -4230,7 +4648,7 @@
 
     // The pair that kept ending up on the same side (or across, in singles).
     var pair = regulars();
-    if (pair && y < H - 230) {
+    if (pair && y < BASE_H - 230) {
       y += 40;
       roundRect(g, P, y, W - P * 2, 112, 28);
       g.fillStyle = 'rgba(217, 242, 92, .1)';
@@ -4243,6 +4661,8 @@
       g.fillText(fitText(g, pair.a + ' + ' + pair.b + ' · ' +
         (state.mode === 'singles' ? 'เจอกัน ' : 'ด้วยกัน ') + pair.n + ' ครั้ง', W - P * 2 - 60), P + 30, y + 92);
     }
+
+    if (qr) drawPayPanel(g, BASE_H - 40, qr, pay, each, P, W, lime, ink, soft, display, body);
 
     g.fillStyle = 'rgba(244, 249, 243, .5)';
     g.font = '400 26px ' + body;
@@ -4272,6 +4692,7 @@
     ready.then(function () {
       var cv = drawRecap();
       recap.url = cv.toDataURL('image/png');
+      recap.img.style.aspectRatio = cv.width + ' / ' + cv.height; // taller with the QR
       recap.img.src = recap.url;
       recap.img.alt = 'การ์ดสรุปก๊วนคืนนี้ ' + stamp();
       recap.file = null;
@@ -4487,6 +4908,11 @@
   }
 
   el.names.addEventListener('input', syncNames);
+
+  el.feePromptPay.addEventListener('input', function () {
+    syncPromptPay();
+    save();
+  });
 
   [el.feeCourt, el.feeShuttles, el.feePrice].forEach(function (input) {
     input.addEventListener('input', function () {
@@ -5088,6 +5514,7 @@
     usingSample = true;
   }
   if (saved) applyFee(saved.fee);
+  syncPromptPay(); // the hint under the field, whether or not a number came back
   pressGroup(el.modeSeg, 'data-mode', state.mode);
   pressGroup(el.planSeg, 'data-plan', state.plan);
   pressGroup(el.courtSeg, 'data-courts', state.courts);
