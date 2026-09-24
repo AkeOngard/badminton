@@ -3503,10 +3503,12 @@
     return audio;
   }
 
-  // Which stroke: a firm clear off tight strings. Pitches and decays are in
-  // seconds; each ring is [frequency, decay, level].
-  var HIT = { click: { hp: 1800, ms: 7, gain: .9 },
-              rings: [[1350, .022, .45], [2900, .011, .2]], body: [480, .014, .3] };
+  // Which stroke: a smash, with the air the racket moves just before it lands.
+  // The club picked it by ear from four. Decays are in seconds; each ring is
+  // [frequency, decay, level].
+  var HIT = { whoosh: { ms: 120, from: 600, to: 2600, gain: .5 },
+              click: { hp: 2200, ms: 8, gain: 1.1 },
+              rings: [[1500, .028, .5], [3200, .013, .22]], body: [420, .016, .35] };
 
   // One stroke of a racket: the strings' crack (a few milliseconds of noise,
   // high-passed), the string bed ringing at a fixed pitch for a few dozen
@@ -3574,7 +3576,8 @@
     if (!ctx) return;
     try {
       if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
-      var t = ctx.currentTime + .02;
+      // Room before the impact for the whole swing to be heard.
+      var t = ctx.currentTime + (HIT.whoosh ? HIT.whoosh.ms / 1000 : 0) + .02;
       stroke(ctx, t, .55, HIT);
       if (kind === 'draw') stroke(ctx, t + .5, .4, HIT);
     } catch (e) { /* no sound this time; the board is what matters */ }
