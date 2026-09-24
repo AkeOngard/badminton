@@ -1598,10 +1598,13 @@
     max-height: none;
     margin: 0;
     border: 0;
+    /* Well clear of the top edge: an iPhone held upright draws the clock
+       there and softens whatever sits under it, so the title needs more than
+       the bare safe area. */
     padding:
-      max(14px, env(safe-area-inset-top, 0px))
+      calc(env(safe-area-inset-top, 0px) + 20px)
       max(18px, env(safe-area-inset-right, 0px))
-      max(14px, env(safe-area-inset-bottom, 0px))
+      calc(env(safe-area-inset-bottom, 0px) + 14px)
       max(18px, env(safe-area-inset-left, 0px));
     background-color: #0B3F33;
     background-image:
@@ -3485,9 +3488,8 @@
 
   /* ---------- the sound of a racket on a shuttle ---------- */
 
-  // Made on the spot rather than loaded: a crack of strings (a burst of noise
-  // through a band around 2.4kHz) over the knock of the frame (a short falling
-  // tone). Nothing to download, and it works offline like the rest.
+  // Made on the spot rather than loaded, so there's nothing to download and it
+  // works offline like the rest.
   var SOUND_KEY = 'badminton-sound';
   var soundOn = true;
   try { soundOn = localStorage.getItem(SOUND_KEY) !== 'off'; } catch (e) { /* on by default */ }
@@ -3501,36 +3503,69 @@
     return audio;
   }
 
-  function hit(ctx, at, level) {
-    var t = ctx.currentTime + at;
-    var len = Math.floor(ctx.sampleRate * .07);
-    var buf = ctx.createBuffer(1, len, ctx.sampleRate);
-    var data = buf.getChannelData(0);
-    for (var i = 0; i < len; i++) data[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 4);
-    var crack = ctx.createBufferSource();
-    crack.buffer = buf;
-    var band = ctx.createBiquadFilter();
-    band.type = 'bandpass';
-    band.frequency.value = 2400;
-    band.Q.value = 1.1;
-    var crackGain = ctx.createGain();
-    crackGain.gain.value = level;
-    crack.connect(band);
-    band.connect(crackGain);
-    crackGain.connect(ctx.destination);
-    crack.start(t);
+  // Which stroke: a smash, with the air the racket moves just before it lands.
+  // The club picked it by ear from four. Decays are in seconds; each ring is
+  // [frequency, decay, level].
+  var HIT = { whoosh: { ms: 120, from: 600, to: 2600, gain: .5 },
+              click: { hp: 2200, ms: 8, gain: 1.1 },
+              rings: [[1500, .028, .5], [3200, .013, .22]], body: [420, .016, .35] };
 
-    var knock = ctx.createOscillator();
-    knock.type = 'sine';
-    knock.frequency.setValueAtTime(820, t);
-    knock.frequency.exponentialRampToValueAtTime(190, t + .05);
-    var knockGain = ctx.createGain();
-    knockGain.gain.setValueAtTime(level * .55, t);
-    knockGain.gain.exponentialRampToValueAtTime(.0001, t + .09);
-    knock.connect(knockGain);
-    knockGain.connect(ctx.destination);
-    knock.start(t);
-    knock.stop(t + .1);
+  // One stroke of a racket: the strings' crack (a few milliseconds of noise,
+  // high-passed), the string bed ringing at a fixed pitch for a few dozen
+  // milliseconds, and a short low knock of the frame. Nothing slides in pitch:
+  // that is what made the first version sound like a game's "boop".
+  function stroke(ctx, t, level, v) {
+    var out = ctx.createGain();
+    out.gain.value = level;
+    out.connect(ctx.destination);
+
+    function noise(ms, shape) {
+      var len = Math.max(1, Math.floor(ctx.sampleRate * ms / 1000));
+      var buf = ctx.createBuffer(1, len, ctx.sampleRate);
+      var d = buf.getChannelData(0);
+      for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * shape(i / len);
+      var src = ctx.createBufferSource();
+      src.buffer = buf;
+      return src;
+    }
+
+    // A smash: the air the racket moves before it lands, rising in pitch.
+    if (v.whoosh) {
+      var w = v.whoosh;
+      var start = Math.max(ctx.currentTime, t - w.ms / 1000);
+      var air = noise(w.ms, function (x) { return Math.pow(x, 2); });
+      var sweep = ctx.createBiquadFilter();
+      sweep.type = 'bandpass';
+      sweep.Q.value = 1.4;
+      sweep.frequency.setValueAtTime(w.from, start);
+      sweep.frequency.exponentialRampToValueAtTime(w.to, t);
+      var airGain = ctx.createGain();
+      airGain.gain.value = w.gain;
+      air.connect(sweep); sweep.connect(airGain); airGain.connect(out);
+      air.start(start);
+    }
+
+    var click = noise(v.click.ms, function (x) { return Math.pow(1 - x, 3); });
+    var hp = ctx.createBiquadFilter();
+    hp.type = 'highpass';
+    hp.frequency.value = v.click.hp;
+    var clickGain = ctx.createGain();
+    clickGain.gain.value = v.click.gain;
+    click.connect(hp); hp.connect(clickGain); clickGain.connect(out);
+    click.start(t);
+
+    v.rings.concat([v.body]).forEach(function (r) {
+      var osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = r[0];
+      var g = ctx.createGain();
+      g.gain.setValueAtTime(0, t);
+      g.gain.linearRampToValueAtTime(r[2], t + .0015);
+      g.gain.setTargetAtTime(0, t + .0015, r[1]);
+      osc.connect(g); g.connect(out);
+      osc.start(t);
+      osc.stop(t + r[1] * 8 + .01);
+    });
   }
 
   // A draw is a serve and its return; a court changing over is one stroke.
@@ -3541,8 +3576,10 @@
     if (!ctx) return;
     try {
       if (ctx.state === 'suspended' && ctx.resume) ctx.resume();
-      hit(ctx, 0, .5);
-      if (kind === 'draw') hit(ctx, .36, .32);
+      // Room before the impact for the whole swing to be heard.
+      var t = ctx.currentTime + (HIT.whoosh ? HIT.whoosh.ms / 1000 : 0) + .02;
+      stroke(ctx, t, .55, HIT);
+      if (kind === 'draw') stroke(ctx, t + .5, .4, HIT);
     } catch (e) { /* no sound this time; the board is what matters */ }
   }
 
