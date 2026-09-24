@@ -1815,6 +1815,36 @@
     white-space: pre;
   }
   .stage__more { color: rgba(244, 249, 243, .62); }
+  /* A name chip too, now it can be tapped, but sized with the line it sits in
+     rather than with a court. */
+  .stage .stage__who {
+    font-family: var(--font-body);
+    font-size: inherit;
+    font-weight: 400;
+    padding: .2em .8em .2em .35em;
+    border: 0;
+    background: rgba(255, 255, 255, .1);
+    color: #F4F9F3;
+  }
+  /* Laid over the courts rather than between them, so it never moves them. */
+  .stage__toast {
+    position: absolute;
+    left: 50%;
+    bottom: calc(env(safe-area-inset-bottom, 0px) + 72px);
+    transform: translateX(-50%);
+    z-index: 2;
+    max-width: min(92%, 40em);
+    margin: 0;
+    padding: .6em 1.2em;
+    border-radius: 16px;
+    background: rgba(6, 24, 19, .9);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 0 0 1px rgba(255, 255, 255, .12);
+    color: #F4F9F3;
+    font-size: clamp(14px, 1.5vw, 20px);
+    line-height: 1.45;
+    text-align: center;
+  }
+  .stage__toast[data-kind="warn"] { box-shadow: 0 10px 30px rgba(0, 0, 0, .35), inset 0 0 0 2px var(--cta); }
   .stage__who {
     display: inline-flex;
     align-items: center;
@@ -2351,6 +2381,7 @@
   </header>
   <div class="stage__courts" id="stageCourts"></div>
   <footer class="stage__next" id="stageNext"></footer>
+  <p class="stage__toast" id="stageToast" role="status" hidden></p>
 </dialog>
 
 <dialog class="modal recap" id="recapDlg" aria-labelledby="recapTitle">
@@ -2456,6 +2487,7 @@
     stageNext: document.getElementById('stageNext'),
     stageClock: document.getElementById('stageClock'),
     stageExit: document.getElementById('stageExit'),
+    stageToast: document.getElementById('stageToast'),
     setupToggle: document.getElementById('setupToggle'),
     setupBody: document.getElementById('setupBody'),
     sumPlayers: document.getElementById('sumPlayers'),
@@ -3211,9 +3243,20 @@
 
   /* ---------- render ---------- */
 
+  var toastTimer = 0;
+
   function setStatus(text, kind) {
     el.status.textContent = text;
     el.status.setAttribute('data-kind', kind || 'ok');
+    // The line above the board is hidden under the big screen, so it says
+    // the same thing there, and stays up while a name is waiting for its pair.
+    if (el.stageToast && stageOpen()) {
+      el.stageToast.textContent = text;
+      el.stageToast.setAttribute('data-kind', kind || 'ok');
+      el.stageToast.hidden = false;
+      clearTimeout(toastTimer);
+      if (!pick) toastTimer = setTimeout(function () { el.stageToast.hidden = true; }, 4000);
+    }
   }
 
   // Standing in for the whole control panel when it is folded away.
@@ -3242,9 +3285,7 @@
     return b;
   }
 
-  // still: drawn for the big screen, where the names are to be read from
-  // across the hall rather than tapped.
-  function courtCard(match, courtNo, roundIdx, still) {
+  function courtCard(match, courtNo, roundIdx) {
     var card = document.createElement('article');
     card.className = 'court';
     card.setAttribute('data-court', String(courtNo));
@@ -3300,7 +3341,7 @@
       var box = document.createElement('div');
       box.className = 'side side--' + (idx ? 'b' : 'a');
       side.forEach(function (name, slot) {
-        box.appendChild(nameChip(name, still ? null : {
+        box.appendChild(nameChip(name, {
           at: 'court', r: roundIdx, c: courtNo - 1, s: idx, i: slot
         }));
       });
@@ -3875,9 +3916,15 @@
     if (!free.length) return null;
     lab.textContent = state.plan === 'random' ? 'คิวถัดไป' : 'พัก';
     free.forEach(function (name) {
-      var chip = document.createElement('span');
+      // Off court, so any of them can be swapped for someone on a court.
+      var chip = document.createElement('button');
+      chip.type = 'button';
+      chip.title = 'แตะเพื่อสลับตัวกับคนในสนาม';
       chip.className = 'stage__who';
       fillChip(chip, name);
+      chip.spot = { at: 'rest', name: name };
+      chip.classList.add('name');
+      chip.setAttribute('aria-pressed', samePlace(pick, chip.spot) ? 'true' : 'false');
       wrap.appendChild(chip);
     });
     return wrap;
@@ -3900,7 +3947,7 @@
       return;
     }
     now.forEach(function (m, c) {
-      var card = courtCard(m, c + 1, 0, true);
+      var card = courtCard(m, c + 1, 0);
       if (dealOnly ? dealOnly.indexOf(c) >= 0 : !quietRender) {
         card.classList.add('court--deal');
         card.style.setProperty('--i', String(c));
@@ -3952,6 +3999,9 @@
     // Esc closes the dialog itself; this is everything else that has to stop.
     el.stage.addEventListener('close', function () {
       document.documentElement.classList.remove('staged');
+      pick = null;
+      paintPick();
+      clearTimeout(toastTimer);
       clearInterval(clockTimer);
       clockTimer = null;
       if (wake) { wake.release().catch(function () {}); wake = null; }
@@ -3966,7 +4016,12 @@
     });
     el.stage.addEventListener('click', function (e) {
       var end = e.target.closest('.court__done');
-      if (end) finishCourt(parseInt(end.getAttribute('data-c'), 10));
+      if (end) {
+        finishCourt(parseInt(end.getAttribute('data-c'), 10));
+        return;
+      }
+      var chip = e.target.closest('button.name');
+      if (chip && chip.spot) chooseChip(chip.spot);
     });
     // A lock is dropped whenever the page is hidden; take it back on return.
     document.addEventListener('visibilitychange', holdAwake);
@@ -4566,8 +4621,11 @@
     setStatus('สลับ ' + an + ' กับ ' + bn + ' แล้ว — สถิติลง/พักปรับตามให้เรียบร้อย', 'ok');
   }
 
+  // Swaps work on whichever is showing: the board, or the big screen over it.
+  function boardRoot() { return stageOpen() ? el.stage : el.rounds; }
+
   function paintPick() {
-    Array.prototype.forEach.call(el.rounds.querySelectorAll('button.name'), function (b) {
+    Array.prototype.forEach.call(boardRoot().querySelectorAll('button.name'), function (b) {
       b.setAttribute('aria-pressed', samePlace(pick, b.spot) ? 'true' : 'false');
     });
   }
@@ -4603,7 +4661,7 @@
   }
 
   function chipAt(spot) {
-    var chips = el.rounds.querySelectorAll('button.name');
+    var chips = boardRoot().querySelectorAll('button.name');
     for (var i = 0; i < chips.length; i++) {
       if (samePlace(chips[i].spot, spot)) return chips[i];
     }
@@ -4674,6 +4732,7 @@
 
   document.addEventListener('keydown', function (e) {
     if (e.key !== 'Escape' || !pick) return;
+    if (stageOpen()) e.preventDefault();
     pick = null;
     paintPick();
     setStatus('ยกเลิกการเลือกแล้ว', 'ok');
