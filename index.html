@@ -1038,11 +1038,25 @@
     width: 100%;
   }
   .fee__pp input::placeholder { font-family: var(--font-body); letter-spacing: 0; color: var(--ink-3); }
-  .fee__pp input:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
+  .fee__pp input:focus-visible,
+  .fee__pp select:focus-visible { outline: 2px solid var(--accent-text); outline-offset: 1px; }
   .fee__pp input[aria-invalid="true"] { box-shadow: inset 0 0 0 1.5px var(--danger); }
-  #feePromptPayHint { margin-top: 5px; line-height: 1.5; }
-  #feePromptPayHint[data-kind="ok"] { color: var(--accent-text); }
-  #feePromptPayHint[data-kind="warn"] { color: var(--danger); }
+  .fee__pp select {
+    font-family: var(--font-body);
+    font-size: 14px;
+    color: var(--ink);
+    background: var(--recess);
+    border: 0;
+    box-shadow: inset 0 1px 2px var(--recess);
+    border-radius: var(--r-sm);
+    padding: 9px 11px;
+    width: 100%;
+  }
+  /* The holder's name is words, not digits. */
+  .fee__bank #feeHolder { font-family: var(--font-body); letter-spacing: 0; }
+  #feePromptPayHint, #feeBankHint { margin-top: 5px; line-height: 1.5; }
+  #feePromptPayHint[data-kind="ok"], #feeBankHint[data-kind="ok"] { color: var(--accent-text); }
+  #feePromptPayHint[data-kind="warn"], #feeBankHint[data-kind="warn"] { color: var(--danger); }
   .fee__out {
     display: flex;
     flex-direction: column;
@@ -1660,7 +1674,7 @@
   /* Safari on iOS zooms the whole page in when a field under 16px takes focus,
      and leaves it zoomed. Touch pointers get the bigger text to stop it. */
   @media (hover: none) and (pointer: coarse) {
-    textarea, .fee__row input, .fee__pp input { font-size: 16px; }
+    textarea, .fee__row input, .fee__pp input, .fee__pp select { font-size: 16px; }
   }
 
   /* ---------- the big screen ----------
@@ -2332,6 +2346,35 @@
                      spellcheck="false" maxlength="24" placeholder="เบอร์มือถือ หรือเลขบัตรประชาชน">
             </label>
             <p class="hint" id="feePromptPayHint"></p>
+            <div class="fee__pp fee__bank">
+              <span>เลขบัญชีธนาคาร</span>
+              <!-- Codes as the Bank of Thailand assigns them; the QR carries the code. -->
+              <select id="feeBank" aria-label="ธนาคาร">
+                <option value="">เลือกธนาคาร</option>
+                <option value="004">กสิกรไทย</option>
+                <option value="014">ไทยพาณิชย์</option>
+                <option value="002">กรุงเทพ</option>
+                <option value="006">กรุงไทย</option>
+                <option value="025">กรุงศรีอยุธยา</option>
+                <option value="011">ทหารไทยธนชาต (ttb)</option>
+                <option value="030">ออมสิน</option>
+                <option value="034">ธ.ก.ส.</option>
+                <option value="033">อาคารสงเคราะห์</option>
+                <option value="024">ยูโอบี</option>
+                <option value="022">ซีไอเอ็มบี ไทย</option>
+                <option value="069">เกียรตินาคินภัทร</option>
+                <option value="067">ทิสโก้</option>
+                <option value="073">แลนด์ แอนด์ เฮ้าส์</option>
+                <option value="070">ไอซีบีซี (ไทย)</option>
+                <option value="071">ไทยเครดิต</option>
+                <option value="066">อิสลามแห่งประเทศไทย</option>
+              </select>
+              <input type="text" id="feeAccount" inputmode="numeric" autocomplete="off"
+                     spellcheck="false" maxlength="24" placeholder="เลขบัญชี" aria-label="เลขบัญชี">
+              <input type="text" id="feeHolder" autocomplete="off" maxlength="40"
+                     placeholder="ชื่อบัญชี ให้คนโอนเช็กก่อนกดยืนยัน" aria-label="ชื่อบัญชี">
+            </div>
+            <p class="hint" id="feeBankHint"></p>
           </div>
 
           <div class="field">
@@ -2499,6 +2542,10 @@
     feeOut: document.getElementById('feeOut'),
     feePromptPay: document.getElementById('feePromptPay'),
     feePromptPayHint: document.getElementById('feePromptPayHint'),
+    feeBank: document.getElementById('feeBank'),
+    feeAccount: document.getElementById('feeAccount'),
+    feeHolder: document.getElementById('feeHolder'),
+    feeBankHint: document.getElementById('feeBankHint'),
     planHint: document.getElementById('planHint'),
     courtSeg: document.getElementById('courtSeg'),
     courtHint: document.getElementById('courtHint'),
@@ -3703,7 +3750,8 @@
   function feeState() {
     return {
       court: el.feeCourt.value, shuttles: el.feeShuttles.value, price: el.feePrice.value,
-      promptpay: el.feePromptPay.value
+      promptpay: el.feePromptPay.value,
+      bank: el.feeBank.value, account: el.feeAccount.value, holder: el.feeHolder.value
     };
   }
 
@@ -3718,7 +3766,39 @@
     // Digits and the usual separators only; anything else was not typed here.
     var pp = raw.promptpay;
     el.feePromptPay.value = typeof pp === 'string' && /^[0-9 -]{0,24}$/.test(pp) ? pp : '';
+    var code = raw.bank;
+    el.feeBank.value = typeof code === 'string' && BANKS[code] ? code : '';
+    var acct = raw.account;
+    el.feeAccount.value = typeof acct === 'string' && /^[0-9 -]{0,24}$/.test(acct) ? acct : '';
+    var holder = raw.holder;
+    el.feeHolder.value = typeof holder === 'string' ? holder.replace(/[\u0000-\u001F\u007F]/g, '').slice(0, 40) : '';
     syncPromptPay();
+  }
+
+  // Bank of Thailand codes, read from the bank picker so the two cannot drift.
+  var BANKS = {};
+  Array.prototype.forEach.call(el.feeBank.options, function (o) {
+    if (o.value) BANKS[o.value] = o.textContent;
+  });
+
+  // Thai bank accounts run 10 digits at most banks, 12 at the state savings ones.
+  function bankCheck() {
+    var code = el.feeBank.value;
+    var d = ppDigits(el.feeAccount.value);
+    var holder = el.feeHolder.value.replace(/\s+/g, ' ').trim();
+    if (!code && !d) return { ok: false, empty: true };
+    if (!code) return { ok: false, why: 'เลือกธนาคารด้วย' };
+    if (!d) return { ok: false, why: 'ใส่เลขบัญชีด้วย' };
+    if (d.length < 10 || d.length > 12) {
+      return { ok: false, why: 'เลขบัญชีธนาคารมี 10–12 หลัก (ตอนนี้ ' + d.length + ' หลัก)' };
+    }
+    return { ok: true, code: code, bank: BANKS[code], digits: d, holder: holder };
+  }
+
+  // Grouped the way the banks print it on a passbook, so it is easy to type.
+  function accountShown(d) {
+    if (d.length === 10) return d.slice(0, 3) + '-' + d.slice(3, 4) + '-' + d.slice(4, 9) + '-' + d.slice(9);
+    return d.replace(/(\d{4})(?=\d)/g, '$1 ');
   }
 
   /* ---------- PromptPay: the payload Thai banking apps read ---------- */
@@ -3768,19 +3848,31 @@
     return crc;
   }
 
-  // EMVCo merchant-presented QR, PromptPay flavour. With an amount the payer's
-  // app fills it in and locks it; without one they type it themselves.
-  function promptPayPayload(check, amount) {
-    var tag = check.kind === 'phone' ? '01' : check.kind === 'id' ? '02' : '03';
-    var target = check.kind === 'phone' ? '0066' + check.digits.slice(1) : check.digits;
+  // EMVCo merchant-presented QR, PromptPay flavour: tag 29 names who is paid.
+  // With an amount the payer's app fills it in and locks it; without one they
+  // type it themselves.
+  function emvPayload(recipient, amount) {
     var body = tlv('00', '01') +
       tlv('01', amount ? '12' : '11') +
-      tlv('29', tlv('00', 'A000000677010111') + tlv(tag, target)) +
+      tlv('29', tlv('00', 'A000000677010111') + recipient) +
       tlv('58', 'TH') +
       tlv('53', '764') +
       (amount ? tlv('54', amount.toFixed(2)) : '') +
       '6304';
     return body + ('000' + crc16(body).toString(16).toUpperCase()).slice(-4);
+  }
+
+  function promptPayPayload(check, amount) {
+    var tag = check.kind === 'phone' ? '01' : check.kind === 'id' ? '02' : '03';
+    var target = check.kind === 'phone' ? '0066' + check.digits.slice(1) : check.digits;
+    return emvPayload(tlv(tag, target), amount);
+  }
+
+  // Sub-tag 04: a bank account, as the bank's three-digit code and the number.
+  // It is in the Thai QR standard, but not every banking app is known to take
+  // it, so the card always prints the number beside it for typing by hand.
+  function bankPayload(bank, amount) {
+    return emvPayload(tlv('04', bank.code + bank.digits), amount);
   }
 
   function syncPromptPay() {
@@ -3796,6 +3888,26 @@
     } else {
       hint.setAttribute('data-kind', 'warn');
       hint.textContent = check.why;
+    }
+    syncBank(check.ok);
+  }
+
+  function syncBank(promptPayOk) {
+    var bank = bankCheck();
+    var hint = el.feeBankHint;
+    var shortAcct = ppDigits(el.feeAccount.value).length > 0 && !bank.ok && el.feeBank.value !== '';
+    el.feeAccount.setAttribute('aria-invalid', shortAcct ? 'true' : 'false');
+    if (bank.empty) {
+      hint.removeAttribute('data-kind');
+      hint.textContent = 'ใส่แล้วการ์ดจะพิมพ์เลขบัญชีให้คนโอนเอง และทำ QR จากเลขบัญชีให้ด้วย (ทดลอง)';
+    } else if (!bank.ok) {
+      hint.setAttribute('data-kind', 'warn');
+      hint.textContent = bank.why;
+    } else {
+      hint.setAttribute('data-kind', 'ok');
+      hint.textContent = '✓ ' + bank.bank + ' ' + accountShown(bank.digits) + (promptPayOk
+        ? ' — ขึ้นบนการ์ดเป็นอีกทางโอน (ช่อง QR ใช้พร้อมเพย์)'
+        : ' — QR จากเลขบัญชียังเป็นแบบทดลอง ลองสแกนด้วยแอปหลาย ๆ ธนาคารก่อนส่งให้ก๊วน');
     }
   }
 
@@ -4472,10 +4584,45 @@
     return best;
   }
 
+  // What the panel says beside the code, top to bottom:
+  // [text, weight, size, family ('d'isplay or 'b'ody), colour, distance from the line above].
+  // The PromptPay QR is the one proven to scan, so when both are set it takes
+  // the code and the bank account is printed as the other way to pay.
+  function payLines(pay, bank, each) {
+    var lines = [
+      ['สแกนจ่ายค่าก๊วน', 700, 34, 'd', 'lime', 82],
+      [each ? 'คนละ ' + baht(each) + ' บาท' : 'ใส่ยอดตอนโอน', 700, 58, 'd', 'ink', 78]
+    ];
+    function account(gapAbove) {
+      lines.push([accountShown(bank.digits), 700, 40, 'd', 'ink', gapAbove]);
+      if (bank.holder) lines.push([bank.holder, 400, 28, 'b', 'soft', 44]);
+    }
+    if (pay.ok) {
+      lines.push(['พร้อมเพย์ ' + ppMasked(pay), 500, 30, 'b', 'soft', 62]);
+      if (bank.ok) {
+        lines.push(['หรือโอนเข้า ' + bank.bank, 500, 28, 'b', 'soft', 58]);
+        account(50);
+      } else {
+        lines.push(['เปิดแอปธนาคาร สแกนจากรูปนี้', 400, 26, 'b', 'soft', 60]);
+        lines.push([each ? 'ยอดขึ้นให้เอง ไม่ต้องพิมพ์' : 'แล้วพิมพ์ยอดเอง', 400, 26, 'b', 'soft', 38]);
+      }
+    } else {
+      lines.push([bank.bank, 500, 30, 'b', 'soft', 62]);
+      account(52);
+      lines.push(['สแกนไม่ได้ พิมพ์เลขบัญชีนี้โอนได้', 400, 24, 'b', 'soft', 50]);
+    }
+    return lines;
+  }
+
+  function payPanelHeight(lines) {
+    var text = lines.reduce(function (h, l) { return h + l[5]; }, 0) + 40;
+    return Math.max(380, text); // never shorter than the code's tile plus its margin
+  }
+
   // The QR panel: the code on white, as every banking app expects to read it,
-  // with a quiet zone of at least four modules, and the share it asks for.
-  function drawPayPanel(g, top, qr, check, each, P, W, lime, ink, soft, display, body) {
-    var ph = 380;
+  // with a quiet zone of at least four modules, and who to pay and how much.
+  function drawPayPanel(g, top, qr, lines, P, W, ink, display, body) {
+    var ph = payPanelHeight(lines);
     roundRect(g, P, top, W - P * 2, ph, 36);
     g.fillStyle = 'rgba(255, 255, 255, .07)';
     g.fill();
@@ -4497,27 +4644,26 @@
     }
 
     var x = tx + tile + 36, width = W - P - 28 - x;
-    g.fillStyle = lime;
-    g.font = '700 34px ' + display;
-    g.fillText('สแกนจ่ายค่าก๊วน', x, top + 82);
-    g.fillStyle = ink;
-    g.font = '700 58px ' + display;
-    g.fillText(fitText(g, each ? 'คนละ ' + baht(each) + ' บาท' : 'ใส่ยอดตอนโอน', width), x, top + 160);
-    g.fillStyle = soft;
-    g.font = '500 30px ' + body;
-    g.fillText(fitText(g, 'พร้อมเพย์ ' + ppMasked(check), width), x, top + 222);
-    g.font = '400 26px ' + body;
-    g.fillText(fitText(g, 'เปิดแอปธนาคาร สแกนจากรูปนี้', width), x, top + 282);
-    g.fillText(fitText(g, each ? 'ยอดขึ้นให้เอง ไม่ต้องพิมพ์' : 'แล้วพิมพ์ยอดเอง', width), x, top + 320);
+    var colours = { lime: '#D9F25C', ink: ink, soft: 'rgba(244, 249, 243, .68)' };
+    var y = top;
+    lines.forEach(function (l) {
+      y += l[5];
+      g.fillStyle = colours[l[4]];
+      g.font = l[1] + ' ' + l[2] + 'px ' + (l[3] === 'd' ? display : body);
+      g.fillText(fitText(g, l[0], width), x, y);
+    });
   }
 
   function drawRecap() {
-    // The card is laid out for 1350 tall; a PromptPay number adds a panel below.
-    var BASE_H = 1350, PAY_H = 440;
+    // The card is laid out for 1350 tall; a way to pay adds a panel below it.
+    var BASE_H = 1350;
     var each = feeEach();
     var pay = ppCheck(el.feePromptPay.value);
-    var qr = pay.ok ? qrMatrix(promptPayPayload(pay, each)) : null;
-    var W = 1080, H = BASE_H + (qr ? PAY_H : 0), P = 80;
+    var bank = bankCheck();
+    var payload = pay.ok ? promptPayPayload(pay, each) : bank.ok ? bankPayload(bank, each) : '';
+    var qr = payload ? qrMatrix(payload) : null;
+    var lines = qr ? payLines(pay, bank, each) : null;
+    var W = 1080, H = BASE_H + (qr ? payPanelHeight(lines) + 60 : 0), P = 80;
     var cv = document.createElement('canvas');
     cv.width = W;
     cv.height = H;
@@ -4662,7 +4808,7 @@
         (state.mode === 'singles' ? 'เจอกัน ' : 'ด้วยกัน ') + pair.n + ' ครั้ง', W - P * 2 - 60), P + 30, y + 92);
     }
 
-    if (qr) drawPayPanel(g, BASE_H - 40, qr, pay, each, P, W, lime, ink, soft, display, body);
+    if (qr) drawPayPanel(g, BASE_H - 40, qr, lines, P, W, ink, display, body);
 
     g.fillStyle = 'rgba(244, 249, 243, .5)';
     g.font = '400 26px ' + body;
@@ -4909,9 +5055,11 @@
 
   el.names.addEventListener('input', syncNames);
 
-  el.feePromptPay.addEventListener('input', function () {
-    syncPromptPay();
-    save();
+  [el.feePromptPay, el.feeBank, el.feeAccount, el.feeHolder].forEach(function (field) {
+    field.addEventListener(field === el.feeBank ? 'change' : 'input', function () {
+      syncPromptPay(); // also brings the bank hint up to date
+      save();
+    });
   });
 
   [el.feeCourt, el.feeShuttles, el.feePrice].forEach(function (input) {
