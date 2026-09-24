@@ -155,8 +155,6 @@
     --cta-ink: #0B3A2F;
     --rest: #7A5510;
     --rest-soft: #F4E9D2;
-    --plank: #C8AE82;
-    --plank-leg: #A88D60;
     --danger: #B3261E;
     --danger-ink: #FFF4F2;
     --danger-soft: #F6D9D5;
@@ -234,8 +232,6 @@
       --cta-ink: #0B3A2F;
       --rest: #E3BC69;
       --rest-soft: #2E2718;
-      --plank: #6E5A3C;
-      --plank-leg: #57472F;
       --danger: #E4736A;
       --danger-ink: #2A0E0B;
       --danger-soft: #3A1A17;
@@ -293,8 +289,6 @@
     --cta-ink: #0B3A2F;
     --rest: #E3BC69;
     --rest-soft: #2E2718;
-    --plank: #6E5A3C;
-    --plank-leg: #57472F;
     --danger: #E4736A;
     --danger-ink: #2A0E0B;
     --danger-soft: #3A1A17;
@@ -1265,7 +1259,7 @@
     text-align: center;
     overflow-wrap: anywhere;
   }
-  /* Everyone's own colour and letter, the same on court, on the bench, in the
+  /* Everyone's own colour and letter, the same on court, waiting, resting, in the
      tally and on the big screen. Dark type on a light fill reads on every mat. */
   .av {
     flex: none;
@@ -1465,99 +1459,6 @@
     border-radius: 14px;
     box-shadow: 0 10px 30px rgba(0, 0, 0, .25);
     background: #0B3F33;
-  }
-
-  /* The bench: a glass strip with a plank under the seats, and whoever is
-     next on at the left end. */
-  /* As long as the people on it: a three-seat bench doesn't span the hall. */
-  .bench {
-    width: fit-content;
-    min-width: min(100%, 300px);
-    max-width: 100%;
-    box-sizing: border-box;
-    margin-top: 2px;
-    padding: 12px 14px 20px;
-    border-radius: calc(var(--r-sm) + 9px);
-    background: var(--glass-2);
-    background-image: var(--glass-sheen);
-    box-shadow:
-      inset 0 1px 0 var(--glass-rim),
-      inset 0 0 0 1px var(--glass-edge);
-  }
-  .bench__head {
-    display: flex;
-    align-items: baseline;
-    gap: 10px;
-    margin: 0 0 10px;
-    font-size: 12.5px;
-    color: var(--ink-3);
-  }
-  .bench__head b {
-    font-family: var(--font-display);
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--ink);
-  }
-  .bench__head span { margin-left: auto; }
-  .bench__seats {
-    position: relative;
-    display: flex;
-    flex-wrap: wrap;
-    align-items: flex-start;
-    gap: 10px 8px;
-    padding-bottom: 12px;
-  }
-  /* The plank, and two short legs under it. */
-  .bench__seats::after {
-    content: "";
-    position: absolute;
-    left: -4px;
-    right: -4px;
-    bottom: -12px;
-    height: 14px;
-    pointer-events: none;
-    background:
-      linear-gradient(var(--plank), var(--plank)) top / 100% 6px no-repeat,
-      linear-gradient(var(--plank-leg), var(--plank-leg)) 9% 100% / 6px 9px no-repeat,
-      linear-gradient(var(--plank-leg), var(--plank-leg)) 91% 100% / 6px 9px no-repeat;
-    border-radius: 3px;
-  }
-  .seat {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-    min-width: 0;
-  }
-  .seat .name {
-    background: var(--chip);
-    border-color: var(--chip-edge);
-    color: var(--ink);
-    font-size: 13.5px;
-    padding: 5px 12px;
-  }
-  .seat--next .name {
-    border-color: var(--accent-line);
-    box-shadow: inset 0 0 0 1px var(--accent-line), 0 4px 12px rgba(14, 40, 33, .12);
-  }
-  .seat__meta {
-    align-self: flex-start;
-    padding-left: 4px;
-    display: flex;
-    gap: 3px;
-    min-height: 14px;
-    align-items: center;
-    font-size: 11px;
-    font-weight: 600;
-    color: var(--accent-text);
-    white-space: nowrap;
-  }
-  .seat__meta i {
-    width: 5px;
-    height: 5px;
-    border-radius: 50%;
-    background: var(--rest);
-    opacity: .7;
   }
 
   .waiting {
@@ -3198,7 +3099,7 @@
   function gameText(m) { return sideText(m[0]) + ' กับ ' + sideText(m[1]); }
 
   // Where every name on the board stands, by name: the first chip for it in
-  // page order, which is its court if it has one, else its bench seat.
+  // page order, which is its court if it has one, else where it waits.
   function chipsByName() {
     var out = Object.create(null);
     Array.prototype.forEach.call(el.rounds.querySelectorAll('button.name'), function (chip) {
@@ -3208,8 +3109,8 @@
     return out;
   }
 
-  // After a game ends, the players leaving walk to the bench, the next ones
-  // walk on, and everyone left on the bench shuffles along to their new seat.
+  // After a game ends, the players leaving walk off to wait or rest, the next
+  // ones walk on, and anyone else whose place changed moves along to it.
   function walkOver(before, over, filled) {
     if (!motionOk() || stageOpen()) return;
     var leaving = Object.create(null);
@@ -3422,12 +3323,12 @@
     return card;
   }
 
-  /* ---------- the bench ---------- */
+  /* ---------- who goes on next ---------- */
 
   // Everyone off court, in the order they'd go on: first whoever a drawn round
   // already has down for a game, round by round; then the rest, fewest games
   // first and longest wait next — the same line a fresh game is drawn from.
-  function benchOrder() {
+  function queueLine() {
     var busy = onCourtNow();
     var queuedAt = Object.create(null);
     state.rounds.forEach(function (round, r) {
@@ -3445,61 +3346,6 @@
         ((state.waits[b] || 0) - (state.waits[a] || 0)) ||
         a.localeCompare(b, 'th');
     }).map(function (n) { return { name: n, round: n in queuedAt ? queuedAt[n] : -1 }; });
-  }
-
-  // Who the next game takes from the front of the bench: the players of the
-  // next drawn round, or in a random draw with none left, one court's worth.
-  function nextOnBench(line) {
-    if (!line.length) return 0;
-    if (line[0].round > 0) {
-      return line.filter(function (s) { return s.round === line[0].round; }).length;
-    }
-    return state.plan === 'random' ? Math.min(perCourt(), line.length) : 0;
-  }
-
-  function benchCard() {
-    var line = benchOrder();
-    if (!line.length) return null;
-    var up = nextOnBench(line);
-
-    var card = document.createElement('div');
-    card.className = 'bench';
-    var head = document.createElement('p');
-    head.className = 'bench__head';
-    var title = document.createElement('b');
-    title.textContent = 'ม้านั่ง · ' + line.length + ' คน';
-    head.appendChild(title);
-    var hint = document.createElement('span');
-    hint.textContent = up ? 'ลงก่อนจากซ้าย' : 'รอสนามว่าง';
-    head.appendChild(hint);
-    card.appendChild(head);
-
-    var seats = document.createElement('div');
-    seats.className = 'bench__seats';
-    line.forEach(function (seat, i) {
-      var box = document.createElement('div');
-      box.className = 'seat' + (i < up ? ' seat--next' : '');
-      // Spots as before: someone a later round has down for a game waits for
-      // it; anyone else is resting. Either can be swapped onto a court.
-      box.appendChild(nameChip(seat.name, seat.round > 0
-        ? { at: 'wait', r: 0, name: seat.name }
-        : { at: 'rest', name: seat.name }));
-      var meta = document.createElement('span');
-      meta.className = 'seat__meta';
-      if (i < up) {
-        // Said once, over the first of the group; the ring marks the rest.
-        if (!i) meta.textContent = seat.round > 0 ? 'ต่อไป · รอบ ' + (seat.round + 1) : 'ต่อไป';
-      } else {
-        // One dot for each game sat out in a row.
-        var waited = Math.min(state.waits[seat.name] || 0, 5);
-        for (var k = 0; k < waited; k++) meta.appendChild(document.createElement('i'));
-        if (waited) meta.setAttribute('title', 'รอมา ' + (state.waits[seat.name] || 0) + ' เกม');
-      }
-      box.appendChild(meta);
-      seats.appendChild(box);
-    });
-    card.appendChild(seats);
-    return card;
   }
 
   // Set while a swap redraws the board: the cards are already on the table,
@@ -3591,12 +3437,7 @@
       sec.appendChild(head);
       sec.appendChild(courts);
 
-      // Round 1 has the bench under it instead: everyone off court right now.
-      if (idx === 0) {
-        var bench = benchCard();
-        if (bench) sec.appendChild(bench);
-      }
-      var waitingNames = idx ? state.waiting[idx] || [] : [];
+      var waitingNames = state.waiting[idx] || [];
       if (waitingNames.length) {
         var wait = document.createElement('p');
         wait.className = 'waiting';
@@ -3611,6 +3452,19 @@
 
       wrap.appendChild(sec);
     });
+
+    if (state.resting.length) {
+      var rest = document.createElement('div');
+      rest.className = 'rest';
+      var lab = document.createElement('span');
+      lab.className = 'rest__label';
+      lab.textContent = 'พักชุดนี้ · ' + state.resting.length + ' คน';
+      rest.appendChild(lab);
+      state.resting.forEach(function (name) {
+        rest.appendChild(nameChip(name, { at: 'rest', name: name }));
+      });
+      wrap.appendChild(rest);
+    }
 
     var hint = document.createElement('p');
     hint.className = 'swaphint';
@@ -4017,7 +3871,7 @@
       }
       return wrap;
     }
-    var free = benchOrder().map(function (s) { return s.name; });
+    var free = queueLine().map(function (s) { return s.name; });
     if (!free.length) return null;
     lab.textContent = state.plan === 'random' ? 'คิวถัดไป' : 'พัก';
     free.forEach(function (name) {
